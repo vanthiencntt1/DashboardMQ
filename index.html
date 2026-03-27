@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQ Soft — Task Command Center</title>
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      MQ·SOFT — TASK COMMAND CENTER
+    </div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <span id="date-display"></span>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+        </svg>
+        REFRESH
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- KPI ROW -->
+    <div class="section-label">Tổng quan hôm nay</div>
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card" style="--card-accent:#22c55e" onclick="showTab('completed')">
+        <div class="kpi-label">Hoàn thành hôm nay</div>
+        <div class="kpi-value" id="kpi-completed">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks đã done</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#00d4ff" onclick="showTab('created')">
+        <div class="kpi-label">Tạo mới hôm nay</div>
+        <div class="kpi-value" id="kpi-created">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks mới phát sinh</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#ef4444" onclick="showTab('wait-test')">
+        <div class="kpi-label">Chờ Test</div>
+        <div class="kpi-value" id="kpi-waitTest">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">đã commit · chờ QA</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#f59e0b" onclick="showTab('pending')">
+        <div class="kpi-label">Chờ thực hiện</div>
+        <div class="kpi-value" id="kpi-pending">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks trong hàng đợi</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#a855f7" onclick="showTab('doing')">
+        <div class="kpi-label">Đang thực hiện</div>
+        <div class="kpi-value" id="kpi-doing">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks đang chạy</div>
+      </div>
+    </div>
+
+    <!-- BOTTOM GRID -->
+    <div class="section-label">Chi tiết nhân sự & Tasks</div>
+    <div class="bottom-grid">
+
+      <!-- Personnel Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Nhân sự</span>
+          <span class="table-badge" id="staffCount">-- người</span>
+        </div>
+        <div class="personnel-list">
+          <div class="person-row person-row-head">
+            <div class="col-head">Tên</div>
+            <div class="col-head" title="Chờ">CHỜ</div>
+            <div class="col-head" title="Đang làm">LÀM</div>
+            <div class="col-head" title="Review">REV</div>
+            <div class="col-head" title="Ưu tiên">P!</div>
+          </div>
+          <div id="personList"></div>
+        </div>
+      </div>
+
+      <!-- Task Detail -->
+      <div class="detail-card">
+        <div class="detail-tabs" id="tabBar">
+          <button class="tab-btn active" data-tab="completed" onclick="showTab('completed')">✓ Hoàn thành</button>
+          <button class="tab-btn" data-tab="created" onclick="showTab('created')">+ Tạo mới</button>
+          <button class="tab-btn" data-tab="wait-test" onclick="showTab('wait-test')">⬡ Chờ test</button>
+          <button class="tab-btn" data-tab="pending" onclick="showTab('pending')">⏳ Chờ</button>
+          <button class="tab-btn" data-tab="doing" onclick="showTab('doing')">▶ Đang làm</button>
+        </div>
+        <div class="detail-body" id="taskList">
+          <div class="empty-state">Đang tải dữ liệu...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Task Detail</div>
+        <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-dot"></div>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- JS -->
+  <script src="script.js"></script>
+</body>
+
+</html>
