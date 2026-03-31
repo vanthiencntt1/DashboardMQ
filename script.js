@@ -43,7 +43,8 @@ let state = {
   currentDept: 'All',
   currentProject: 'All',
   currentModalStaff: '',
-  currentModalFilter: 'all'
+  currentModalFilter: 'all',
+  searchText: ''
 };
 
 const now = new Date();
@@ -190,6 +191,8 @@ function renderModalContent(name, d, currentFilter) {
 
 // --- LOGIC ---
 async function loadPersonnelStats(filteredStaff) {
+  let overloadedNames = [];
+
   for (const s of filteredStaff) {
     const name = s.name;
     try {
@@ -204,15 +207,75 @@ async function loadPersonnelStats(filteredStaff) {
       const row = document.getElementById('row-' + btoa(encodeURIComponent(name)));
       if (row) {
         const cells = row.querySelectorAll('.person-stat');
-        cells[0].innerHTML = pending.length || '<span style="opacity:0.3">—</span>';
-        cells[1].innerHTML = doing.length || '<span style="opacity:0.3">—</span>';
-        cells[2].innerHTML = review.length || '<span style="opacity:0.3">—</span>';
-        cells[3].innerHTML = priority.length ? `<span style="color:var(--red)">${priority.length}</span>` : '<span style="opacity:0.3">—</span>';
+        cells[0].innerHTML = pending.length || '<span style="opacity:0.3">&mdash;</span>';
+        cells[1].innerHTML = doing.length || '<span style="opacity:0.3">&mdash;</span>';
+        cells[2].innerHTML = review.length || '<span style="opacity:0.3">&mdash;</span>';
+        cells[3].innerHTML = priority.length ? `<span style="color:var(--red)">${priority.length}</span>` : '<span style="opacity:0.3">&mdash;</span>';
+
+        // --- Workload Heatmap ---
+        const totalActive = doing.length + pending.length;
+        row.classList.remove('load-high', 'load-mid', 'load-low');
+        if (doing.length >= 15 || priority.length >= 5) {
+          row.classList.add('load-high');
+          overloadedNames.push(name);
+        } else if (doing.length >= 10 || totalActive >= 15) {
+          row.classList.add('load-mid');
+        } else if (doing.length > 0) {
+          row.classList.add('load-low');
+        }
       }
     } catch (e) {
       console.warn('Failed for', name, e);
     }
   }
+
+  // --- Smart Alert Banner ---
+  const banner = document.getElementById('alertBanner');
+  const alertMsg = document.getElementById('alertMsg');
+  if (overloadedNames.length > 0) {
+    alertMsg.textContent = `\u26a0\ufe0f C\u1ea3nh b\u00e1o: ${overloadedNames.join(', ')} \u0111ang qu\u00e1 t\u1ea3i (\u2265 15 task \u0111ang l\u00e0m ho\u1eb7c 5+ \u01b0u ti\u00ean)!`;
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+// --- HELPERS: Filtered Staff & Top Performers ---
+function getFilteredStaff() {
+  return staffList.filter(s => {
+    const matchDept = state.currentDept === 'All' || s.dept === state.currentDept;
+    const matchSearch = !state.searchText || s.name.toLowerCase().includes(state.searchText);
+    return matchDept && matchSearch;
+  });
+}
+
+function renderTopPerformers(completedToday) {
+  // Count completions per person from today's completed tasks
+  const countMap = {};
+  (completedToday || []).forEach(t => {
+    const name = t.assign_names || t.assign_ids || '';
+    if (!name) return;
+    // assign_names can be a comma-separated list
+    name.split(',').forEach(n => {
+      n = n.trim();
+      if (n) countMap[n] = (countMap[n] || 0) + 1;
+    });
+  });
+
+  const sorted = Object.entries(countMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const section = document.getElementById('topPerfSection');
+  const list = document.getElementById('topPerfList');
+  if (!section || !list) return;
+
+  if (sorted.length === 0) {
+    section.classList.remove('visible');
+    return;
+  }
+
+  list.innerHTML = sorted.map(([name, count]) =>
+    `<span class="top-perf-badge">${name} · ${count} task</span>`
+  ).join('');
+  section.classList.add('visible');
 }
 
 // --- GLOBAL APP OBJECT ---
@@ -240,7 +303,7 @@ window.app = {
       });
 
       // 2. Render Personnel List (Skeleton)
-      const filteredStaff = state.currentDept === 'All' ? staffList : staffList.filter(s => s.dept === state.currentDept);
+      const filteredStaff = getFilteredStaff();
       document.getElementById('staffCount').textContent = `${filteredStaff.length} người`;
       document.getElementById('personList').innerHTML = filteredStaff.map(renderPersonRow).join('');
 
@@ -250,7 +313,10 @@ window.app = {
       // 4. Update Project Dropdown
       updateProjectDropdown();
 
-      // 5. Load detailed stats for visible personnel
+      // 5. Render Top Performers
+      renderTopPerformers(completed);
+
+      // 6. Load detailed stats for visible personnel
       await loadPersonnelStats(filteredStaff);
 
       showToast('Cập nhật thành công!');
@@ -385,7 +451,21 @@ window.app = {
 
   filterByDept: (dept) => {
     state.currentDept = dept;
+    // Reset search when switching dept
+    state.searchText = '';
+    const input = document.getElementById('staffSearch');
+    if (input) input.value = '';
     app.loadAll();
+  },
+
+  // Real-time Staff Search
+  searchStaff: (val) => {
+    state.searchText = val.trim().toLowerCase();
+    const filtered = getFilteredStaff();
+    document.getElementById('staffCount').textContent = `${filtered.length} ng\u01b0\u1eddi`;
+    document.getElementById('personList').innerHTML = filtered.map(renderPersonRow).join('');
+    // Load stats for newly visible rows
+    loadPersonnelStats(filtered);
   },
 
   showPersonDetail: (name) => {

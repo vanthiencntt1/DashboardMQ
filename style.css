@@ -336,6 +336,32 @@ main {
   color: var(--text);
 }
 
+/* Staff Search Input */
+.staff-search {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s;
+  width: 120px;
+}
+
+.staff-search::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.staff-search:focus {
+  border-color: var(--accent);
+  color: var(--text);
+  width: 160px;
+}
+
 .personnel-list {
   overflow-y: auto;
   max-height: 480px;
@@ -363,6 +389,7 @@ main {
   gap: 0.5rem;
   cursor: pointer;
   transition: background 0.15s;
+  position: relative;
 }
 
 .person-row:hover {
@@ -372,6 +399,27 @@ main {
 .person-row:last-child {
   border-bottom: none;
 }
+
+/* Workload Left Indicator */
+.person-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transition: background 0.3s;
+}
+
+.person-row.load-high::before  { background: var(--red); }
+.person-row.load-mid::before   { background: var(--yellow); }
+.person-row.load-low::before   { background: var(--green); }
+
+/* Workload name color */
+.person-row.load-high .person-name { color: var(--red); }
+.person-row.load-mid .person-name  { color: var(--yellow); }
 
 .person-name {
   font-size: var(--fs-sm);
@@ -609,7 +657,135 @@ main {
   margin-bottom: 0.5rem;
 }
 
-/* MODAL */
+/* Toast notification  */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1.2rem;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Alert Toast (red variant for critical) */
+.toast.alert {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.toast.alert .toast-dot {
+  background: var(--red);
+  animation: pulse 1s infinite;
+}
+
+/* Top Performers Section */
+.top-performers-section {
+  margin: 0 1.5rem 1rem;
+  padding: 0.9rem;
+  background: rgba(34, 197, 94, 0.04);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  display: none;
+}
+
+.top-performers-section.visible {
+  display: block;
+}
+
+.top-perf-title {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.top-perf-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.top-perf-badge {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* Smart Alert Banner */
+.alert-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-xs);
+  color: var(--red);
+  letter-spacing: 0.02em;
+  animation: alert-pulse 2s infinite;
+}
+
+.alert-banner.visible {
+  display: flex;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.06); }
+  50%       { border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
+}
+
+.alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  animation: pulse 1s infinite;
+}
+
+/* Priority KPI Card pulse */
+.kpi-card.has-priority {
+  animation: kpi-alert 3s infinite;
+}
+
+@keyframes kpi-alert {
+  0%, 90%, 100% { box-shadow: none; }
+  95% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); }
+}
 .modal-overlay {
   position: fixed;
   inset: 0;

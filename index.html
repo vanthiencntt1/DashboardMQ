@@ -34,6 +34,12 @@
   </header>
 
   <main>
+    <!-- Smart Alert Banner -->
+    <div class="alert-banner" id="alertBanner">
+      <div class="alert-dot"></div>
+      <span id="alertMsg">Cảnh báo: Có nhân sự đang quá tải!</span>
+    </div>
+
     <!-- KPI ROW -->
     <div class="section-label">Tổng quan hôm nay</div>
     <div class="kpi-grid" id="kpiGrid">
@@ -81,8 +87,10 @@
       <!-- Personnel Table -->
       <div class="table-card">
         <div class="table-header">
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <span class="table-title">Nhân sự</span>
+            <input type="text" id="staffSearch" class="staff-search" placeholder="🔍 Tìm tên..."
+              oninput="app.searchStaff(this.value)">
             <select class="dept-select" onchange="app.filterByDept(this.value)">
               <option value="All">Tất cả phòng ban</option>
               <option value="Phòng Triển Khai - Quản Lý Dự Án">Phòng Triển Khai - QLDA</option>
@@ -91,6 +99,11 @@
             </select>
           </div>
           <span class="table-badge" id="staffCount">-- người</span>
+        </div>
+        <!-- Top Performers -->
+        <div class="top-performers-section" id="topPerfSection">
+          <div class="top-perf-title">🏆 Top Hiệu suất hôm nay</div>
+          <div class="top-perf-list" id="topPerfList"></div>
         </div>
         <div class="personnel-list">
           <div class="person-row person-row-head">
@@ -112,9 +125,10 @@
             <select class="dept-select" id="projectSelect" onchange="app.filterByProject(this.value)">
               <option value="All">Tất cả dự án</option>
             </select>
-            <button class="refresh-btn" onclick="app.exportTasks()" style="background:#22c55e; color:white; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
+            <button class="refresh-btn" onclick="app.exportTasks()"
+              style="background:#22c55e; color:white; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
               </svg>
               XUẤT EXCEL
             </button>
@@ -126,7 +140,8 @@
           <button class="tab-btn" data-tab="wait-test" onclick="app.showTab('wait-test')">⬡ Chờ test</button>
           <button class="tab-btn" data-tab="pending" onclick="app.showTab('pending')">⏳ Chờ</button>
           <button class="tab-btn" data-tab="doing" onclick="app.showTab('doing')">▶ Đang làm</button>
-          <button class="tab-btn" data-tab="priority" onclick="app.showTab('priority')" style="--tab-accent:var(--red)">🔥 Ưu tiên</button>
+          <button class="tab-btn" data-tab="priority" onclick="app.showTab('priority')"
+            style="--tab-accent:var(--red)">🔥 Ưu tiên</button>
         </div>
         <div class="detail-body" id="taskList">
           <div class="empty-state">Đang tải dữ liệu...</div>
