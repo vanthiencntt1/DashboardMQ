@@ -85,9 +85,20 @@ function renderTaskItem(t, tab, index) {
 
   const assignee = t.assign_names || t.assign_ids || t.assigned_to_name || t.assignee || '';
   const project = t.project_title || t.project_name || t.space_name || '';
-  const priority = t.tag_names?.includes('Ưu tiên') || t.is_priority || t.priority === 'Cao' ?
-    `<span class="task-tag tag-priority">Ưu tiên</span>` : '';
-  const tags = t.tag_names || t.tag_ids ? `<span class="task-tag tag-review">${t.tag_names || t.tag_ids}</span>` : '';
+
+  // Priority Tag detection
+  const allTags = (t.tag_names || t.tag_ids || '');
+  const hasPriorityTag = allTags.includes('Ưu tiên');
+  const priorityBadge = hasPriorityTag ? `<span class="task-tag tag-priority">Ưu tiên</span>` : '';
+
+  // Other tags rendering (excluding Priority to avoid double badges)
+  let otherTags = '';
+  if (allTags) {
+    const others = allTags.split(',').map(s => s.trim()).filter(s => s && s !== 'Ưu tiên');
+    if (others.length > 0) {
+      otherTags = `<span class="task-tag tag-review">${others.join(', ')}</span>`;
+    }
+  }
 
   const taskID = t.ID || t.id;
   const taskUrl = `https://mqsoft.1office.vn/work-normal-normal/view?ID=${taskID}`;
@@ -100,8 +111,8 @@ function renderTaskItem(t, tab, index) {
       </div>
       <div class="task-meta">
         <span class="task-tag ${tagMap[tab]}">${labelMap[tab]}</span>
-        ${priority}
-        ${tags}
+        ${priorityBadge}
+        ${otherTags}
         ${assignee ? `<span class="task-assignee">👤 ${assignee}</span>` : ''}
         ${project ? `<span style="font-size:0.65rem;color:var(--text-muted)">📁 ${project}</span>` : ''}
       </div>
@@ -196,12 +207,14 @@ async function loadPersonnelStats(filteredStaff) {
   for (const s of filteredStaff) {
     const name = s.name;
     try {
-      const [pending, doing, review, priority] = await Promise.all([
+      const [pending, doing, review, pDoing, pPending] = await Promise.all([
         fetchTasks([{ status: "PENDING", assign_ids: name }]),
         fetchTasks([{ status: "DOING", assign_ids: name }]),
         fetchTasks([{ status: "REVIEW", assign_ids: name }]),
         fetchTasks([{ status: "DOING", tag_ids: "Ưu tiên", assign_ids: name }]),
+        fetchTasks([{ status: "PENDING", tag_ids: "Ưu tiên", assign_ids: name }]),
       ]);
+      const priority = [...pDoing, ...pPending];
       state.staffData[name] = { pending, doing, review, priority };
 
       const row = document.getElementById('row-' + btoa(encodeURIComponent(name)));
@@ -287,19 +300,23 @@ window.app = {
 
     try {
       // 1. Load KPIs
-      const [completed, created, waitTest, pending, doing, priorityTasks] = await Promise.all([
+      const [completed, created, waitTest, pending, doing, pDoing, pPending] = await Promise.all([
         fetchTasks([{ status: "COMPLETED", date_updated: today }]),
         fetchTasks([{ start: today }]),
         fetchTasks([{ status: "DOING", tag_ids: "Đã commit" }]),
         fetchTasks([{ status: "PENDING" }]),
         fetchTasks([{ status: "DOING" }]),
         fetchTasks([{ status: "DOING", tag_ids: "Ưu tiên" }]),
+        fetchTasks([{ status: "PENDING", tag_ids: "Ưu tiên" }]),
       ]);
+
+      const priorityTasks = [...pDoing, ...pPending];
       state.taskData = { completed, created, 'wait-test': waitTest, pending, doing, priority: priorityTasks };
 
-      ['completed', 'created', 'waitTest', 'pending', 'doing'].forEach((id, i) => {
-        const val = [completed, created, waitTest, pending, doing][i];
-        document.getElementById(`kpi-${id}`).textContent = val.totalCount || val.length;
+      ['completed', 'created', 'waitTest', 'pending', 'doing', 'priority'].forEach((id, i) => {
+        const val = [completed, created, waitTest, pending, doing, priorityTasks][i];
+        const el = document.getElementById(`kpi-${id}`);
+        if (el) el.textContent = val.totalCount || val.length;
       });
 
       // 2. Render Personnel List (Skeleton)
