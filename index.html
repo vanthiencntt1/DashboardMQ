@@ -132,6 +132,13 @@
             <select class="dept-select" id="projectSelect" onchange="app.filterByProject(this.value)">
               <option value="All">Tất cả dự án</option>
             </select>
+            <button class="refresh-btn" onclick="app.toggleSort()"
+              style="background:var(--card-bg); color:var(--text); border:1px solid var(--border); padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
+              </svg>
+              SẮP XẾP
+            </button>
             <button class="refresh-btn" onclick="app.exportTasks()"
               style="background:#22c55e; color:white; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

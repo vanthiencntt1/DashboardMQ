@@ -44,7 +44,8 @@ let state = {
   currentProject: 'All',
   currentModalStaff: '',
   currentModalFilter: 'all',
-  searchText: ''
+  searchText: '',
+  sortOrder: 'oldest' // 'oldest' or 'newest'
 };
 
 const now = new Date();
@@ -62,6 +63,36 @@ async function fetchTasks(filters) {
   const items = data?.data?.items || data?.items || data?.data || [];
   if (data?.total_item !== undefined) items.totalCount = data.total_item;
   return items;
+}
+
+function parse1OfficeDate(dateStr) {
+  if (!dateStr) return new Date(0);
+  // Example: 25/03/2024 14:30:00 or 2024-03-25 14:30:00
+  const parts = dateStr.match(/(\d+)/g);
+  if (!parts || parts.length < 3) return new Date(dateStr);
+  if (parts[0].length === 4) return new Date(dateStr); // YYYY-MM-DD
+  const [d, m, y, h, min, s] = parts;
+  return new Date(y, m - 1, d, h || 0, min || 0, s || 0);
+}
+
+function timeSince(dateStr) {
+  if (!dateStr) return '';
+  const d = parse1OfficeDate(dateStr);
+  const diffMs = new Date() - d;
+  if (diffMs < 0) return 'Vừa xong';
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return 'Vừa xong';
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " năm";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " tháng";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " ngày";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " giờ";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " phút";
+  return Math.floor(seconds) + " giây";
 }
 
 // --- COMPONENTS ---
@@ -86,35 +117,29 @@ function renderTaskItem(t, tab, index) {
   const assignee = t.assign_names || t.assign_ids || t.assigned_to_name || t.assignee || '';
   const project = t.project_title || t.project_name || t.space_name || '';
 
-  // Priority Tag detection
-  const allTags = (t.tag_names || t.tag_ids || '');
-  const hasPriorityTag = allTags.includes('Ưu tiên');
-  const priorityBadge = hasPriorityTag ? `<span class="task-tag tag-priority">Ưu tiên</span>` : '';
-
-  // Other tags rendering (excluding Priority to avoid double badges)
-  let otherTags = '';
-  if (allTags) {
-    const others = allTags.split(',').map(s => s.trim()).filter(s => s && s !== 'Ưu tiên');
-    if (others.length > 0) {
-      otherTags = `<span class="task-tag tag-review">${others.join(', ')}</span>`;
-    }
-  }
+  const tagsText = t.tag_names || t.tag_ids || '';
+  const tagsBadge = tagsText ? `<span class="task-tag tag-review">${tagsText}</span>` : '';
 
   const taskID = t.ID || t.id;
   const taskUrl = `https://mqsoft.1office.vn/work-normal-normal/view?ID=${taskID}`;
+  const createdDate = t.date_created || t.created || t.start || '';
+  const delay = timeSince(createdDate);
 
   return `
     <div class="task-item" onclick="window.open('${taskUrl}', '_blank')">
-      <div class="task-title" style="display:flex; gap:8px">
-        <span style="opacity:0.5; font-family:var(--mono); font-size:0.75rem">#${index + 1}</span>
-        <span>${t.title || t.name || '—'}</span>
+      <div class="task-title" style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="display:flex; gap:8px">
+          <span style="opacity:0.5; font-family:var(--mono); font-size:0.75rem">#${index + 1}</span>
+          <span>${t.title || t.name || '—'}</span>
+        </div>
+        ${createdDate ? `<span style="font-size:0.65rem; color:var(--red); font-weight:bold; white-space:nowrap;">🕒 Chậm: ${delay}</span>` : ''}
       </div>
       <div class="task-meta">
         <span class="task-tag ${tagMap[tab]}">${labelMap[tab]}</span>
-        ${priorityBadge}
-        ${otherTags}
+        ${tagsBadge}
         ${assignee ? `<span class="task-assignee">👤 ${assignee}</span>` : ''}
         ${project ? `<span style="font-size:0.65rem;color:var(--text-muted)">📁 ${project}</span>` : ''}
+        ${createdDate ? `<span style="font-size:0.65rem;color:var(--text-muted);margin-left:auto">📅 ${createdDate.split(' ')[0]}</span>` : ''}
       </div>
     </div>`;
 }
@@ -350,6 +375,15 @@ window.app = {
 
     let items = state.taskData[tab] || [];
 
+    // Sort priority logic
+    if (tab === 'priority') {
+      items = [...items].sort((a, b) => {
+        const da = parse1OfficeDate(a.date_created || a.created || a.start || '');
+        const db = parse1OfficeDate(b.date_created || b.created || b.start || '');
+        return state.sortOrder === 'oldest' ? da - db : db - da;
+      });
+    }
+
     // Apply Project Filter
     if (state.currentProject !== 'All') {
       items = items.filter(t => {
@@ -364,6 +398,12 @@ window.app = {
 
   filterByProject: (project) => {
     state.currentProject = project;
+    app.showTab(state.activeTab);
+  },
+
+  toggleSort: () => {
+    state.sortOrder = state.sortOrder === 'oldest' ? 'newest' : 'oldest';
+    showToast(`Đã sắp xếp: ${state.sortOrder === 'oldest' ? 'Chậm lâu nhất' : 'Mới nhất'}`);
     app.showTab(state.activeTab);
   },
 
