@@ -375,14 +375,13 @@ window.app = {
 
     let items = state.taskData[tab] || [];
 
-    // Sort priority logic
-    if (tab === 'priority') {
-      items = [...items].sort((a, b) => {
-        const da = parse1OfficeDate(a.date_created || a.created || a.start || '');
-        const db = parse1OfficeDate(b.date_created || b.created || b.start || '');
-        return state.sortOrder === 'oldest' ? da - db : db - da;
-      });
-    }
+    // Apply Global Sorting based on creation date
+    items = [...items].sort((a, b) => {
+      const da = parse1OfficeDate(a.date_created || a.created || a.start || '');
+      const db = parse1OfficeDate(b.date_created || b.created || b.start || '');
+      // If completed tab, newest is usually best by default, but respect state.sortOrder
+      return state.sortOrder === 'oldest' ? da - db : db - da;
+    });
 
     // Apply Project Filter
     if (state.currentProject !== 'All') {
