@@ -48,8 +48,10 @@ let state = {
   sortOrder: 'oldest' // 'oldest' or 'newest'
 };
 
-const now = new Date();
-const today = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+function getTodayString() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
 
 // --- API ---
 function buildUrl(filters) {
@@ -67,12 +69,17 @@ async function fetchTasks(filters) {
 
 function parse1OfficeDate(dateStr) {
   if (!dateStr) return new Date(0);
-  // Example: 25/03/2024 14:30:00 or 2024-03-25 14:30:00
-  const parts = dateStr.match(/(\d+)/g);
-  if (!parts || parts.length < 3) return new Date(dateStr);
-  if (parts[0].length === 4) return new Date(dateStr); // YYYY-MM-DD
-  const [d, m, y, h, min, s] = parts;
-  return new Date(y, m - 1, d, h || 0, min || 0, s || 0);
+  // Match DD/MM/YYYY or YYYY-MM-DD and potentially HH:mm:ss
+  const parts = String(dateStr).match(/(\d+)/g);
+  if (!parts || parts.length < 3) return new Date(dateStr) || new Date(0);
+  
+  if (parts[0].length === 4) { // YYYY-MM-DD
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date(0) : d;
+  } else { // DD/MM/YYYY
+    const [d, m, y, h, min, s] = parts;
+    return new Date(y, m - 1, d, h || 0, min || 0, s || 0);
+  }
 }
 
 function timeSince(dateStr) {
@@ -324,7 +331,7 @@ window.app = {
     showToast('Đang tải dữ liệu...');
 
     try {
-      // 1. Load KPIs
+      const today = getTodayString();
       const [completed, created, waitTest, pending, doing, pDoing, pPending] = await Promise.all([
         fetchTasks([{ status: "COMPLETED", date_updated: today }]),
         fetchTasks([{ start: today }]),
@@ -377,9 +384,8 @@ window.app = {
 
     // Apply Global Sorting based on creation date
     items = [...items].sort((a, b) => {
-      const da = parse1OfficeDate(a.date_created || a.created || a.start || '');
-      const db = parse1OfficeDate(b.date_created || b.created || b.start || '');
-      // If completed tab, newest is usually best by default, but respect state.sortOrder
+      const da = parse1OfficeDate(a.date_created || a.created || a.start || '').getTime();
+      const db = parse1OfficeDate(b.date_created || b.created || b.start || '').getTime();
       return state.sortOrder === 'oldest' ? da - db : db - da;
     });
 
