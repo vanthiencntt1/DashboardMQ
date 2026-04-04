@@ -413,6 +413,7 @@ window.app = {
   },
 
   exportTasks: () => {
+    const today = getTodayString();
     let items = state.taskData[state.activeTab] || [];
 
     // Apply Project Filter
@@ -458,6 +459,7 @@ window.app = {
   },
 
   exportPersonTasks: () => {
+    const today = getTodayString();
     const name = state.currentModalStaff;
     const d = state.staffData[name];
     if (!d) return;
