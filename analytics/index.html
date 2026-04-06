@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — MQ Soft Performance Hub</title>
+  <meta name="description" content="Phân tích hiệu suất task hoàn thành và phân bổ nhân sự MQ Soft">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header>
+    <div class="header-left">
+      <a href="../dashboard.html" class="back-btn" title="Về Dashboard chính">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        Dashboard
+      </a>
+      <div class="divider"></div>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </div>
+        MQ·SOFT — PERFORMANCE HUB
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <span id="date-display"></span>
+      <button class="action-btn" id="refreshBtn" onclick="loadAll()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+        </svg>
+        REFRESH
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SECTION 1: COMPLETION TIMELINE -->
+    <div class="section-wrap">
+      <div class="section-top">
+        <div class="section-title-group">
+          <div class="section-eyebrow">THỐNG KÊ HOÀN THÀNH</div>
+          <h1 class="section-title">Task Hoàn Thành</h1>
+        </div>
+        <div class="period-selector">
+          <button class="period-btn active" data-period="week" onclick="setPeriod('week')">7 Ngày gần nhất</button>
+          <button class="period-btn" data-period="month" onclick="setPeriod('month')">30 Ngày gần nhất</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-row">
+        <div class="kpi-mini">
+          <div class="kmi-label">Tổng hoàn thành</div>
+          <div class="kmi-value" id="kv-total"><div class="skel-line"></div></div>
+          <div class="kmi-sub" id="ks-total">tasks done</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kmi-label">Trung bình / ngày</div>
+          <div class="kmi-value" id="kv-avg"><div class="skel-line"></div></div>
+          <div class="kmi-sub" id="ks-avg">tasks per day</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kmi-label">Ngày tốt nhất</div>
+          <div class="kmi-value" id="kv-best"><div class="skel-line"></div></div>
+          <div class="kmi-sub" id="ks-best">—</div>
+        </div>
+        <div class="kpi-mini kpi-top">
+          <div class="kmi-label">Top performer</div>
+          <div class="kmi-value kmi-name" id="kv-top"><div class="skel-line"></div></div>
+          <div class="kmi-sub" id="ks-top">—</div>
+        </div>
+      </div>
+
+      <!-- Timeline Chart (pure CSS/HTML) -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title" id="chartTitle">Tiến độ hoàn thành theo ngày</span>
+          <div class="chart-legend-row">
+            <span class="legend-dot"></span>
+            <span>Tasks hoàn thành</span>
+          </div>
+        </div>
+        <div class="chart-body" style="position:relative; min-height:300px; padding:1.5rem;">
+          <div class="chart-loading" id="timelineLoading">
+            <div class="spinner"></div>
+            <span id="loadingMsg">Đang tải dữ liệu...</span>
+          </div>
+          <div id="timelineChart" class="chart-v-inner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: STAFF DISTRIBUTION -->
+    <div class="section-wrap">
+      <div class="section-top">
+        <div class="section-title-group">
+          <div class="section-eyebrow">PHÂN TÍCH NHÂN SỰ</div>
+          <h2 class="section-title">
+            Phân Bổ Task Tồn Đọng
+            <span class="title-badge">PENDING · DOING · REVIEW</span>
+          </h2>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <select class="filter-select" id="deptFilter" onchange="filterDept(this.value)">
+            <option value="All">Tất cả phòng ban</option>
+            <option value="Phòng Triển Khai - Quản Lý Dự Án">Phòng Triển Khai</option>
+            <option value="Phòng Lập Trình">Phòng Lập Trình</option>
+            <option value="Ban Giám Đốc">Ban Giám Đốc</option>
+          </select>
+          <div class="age-filter-group">
+            <button class="age-btn active" data-age="all" onclick="filterAge('all')">Tất cả</button>
+            <button class="age-btn" data-age="green" onclick="filterAge('green')"><span class="lc green"></span>&lt; 7 ngày</button>
+            <button class="age-btn" data-age="yellow" onclick="filterAge('yellow')"><span class="lc yellow"></span>7 – 90 ngày</button>
+            <button class="age-btn" data-age="red" onclick="filterAge('red')"><span class="lc red"></span>&gt; 3 tháng</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- LEFT: Stacked Bar Chart (status breakdown per staff) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Cơ cấu task theo trạng thái</span>
+            <span class="chart-sub" id="staffChartSub">Đang tải...</span>
+          </div>
+          <div class="stacked-legend-row">
+            <span class="sl-item"><span class="sl-dot" style="background:#f59e0b"></span>Chờ</span>
+            <span class="sl-item"><span class="sl-dot" style="background:#22c55e"></span>Đang làm</span>
+            <span class="sl-item"><span class="sl-dot" style="background:#a855f7"></span>Review</span>
+          </div>
+          <div class="staff-chart-wrap" style="position:relative; min-height:200px;">
+            <div class="chart-loading" id="staffLoading">
+              <div class="spinner"></div>
+              <span id="staffLoadingMsg">Đang phân tích (0/24)...</span>
+            </div>
+            <div id="staffChart" class="sb-list"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Donut Pie Chart (always visible) + Ranking Legend -->
+        <div class="staff-table-card pie-right-panel">
+          <div class="chart-header">
+            <span class="chart-title">Phân bổ khối lượng</span>
+            <span class="chart-sub" id="staffTableSub">—</span>
+          </div>
+          <div class="pie-wrap">
+            <div class="pie-svg-box">
+              <svg id="pieChartSvg" viewBox="0 0 200 200" width="200" height="200"></svg>
+              <div class="pie-center-label">
+                <span class="pie-center-val" id="pieCenterVal">—</span>
+                <span class="pie-center-sub">tasks</span>
+              </div>
+            </div>
+            <!-- Ranking legend -->
+            <div class="pie-legend" id="pieLegend">
+              <div class="table-skel">
+                <div class="skel-row" style="width:92%"></div>
+                <div class="skel-row" style="width:75%"></div>
+                <div class="skel-row" style="width:84%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Task Detail Modal -->
+  <div class="modal-overlay" id="detailOverlay" onclick="closeDetailModal(event)">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="modal-htitle" id="detailTitle">Chi tiết Tasks</span>
+        <button class="modal-close-btn" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-scroll" id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-dot"></div>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

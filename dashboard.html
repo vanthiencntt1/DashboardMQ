@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQ Soft — Task Command Center</title>
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      MQ·SOFT — TASK COMMAND CENTER
+    </div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <span id="date-display"></span>
+      <a href="analytics/index.html"
+        style="display:flex; align-items:center; gap:6px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; padding:6px 14px; border-radius:6px; font-family:var(--mono); font-size:var(--fs-xs); text-decoration:none; letter-spacing:0.08em; transition:all 0.2s;"
+        onmouseover="this.style.background='rgba(245,158,11,0.2)'"
+        onmouseout="this.style.background='rgba(245,158,11,0.1)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        PHÂN BỔ TASK
+      </a>
+      <button class="refresh-btn" id="refreshBtn" onclick="app.loadAll()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+        </svg>
+        REFRESH
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Smart Alert Banner -->
+    <div class="alert-banner" id="alertBanner">
+      <div class="alert-dot"></div>
+      <span id="alertMsg">Cảnh báo: Có nhân sự đang quá tải!</span>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="section-label">Tổng quan hôm nay</div>
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card" style="--card-accent:#22c55e" onclick="app.showTab('completed')">
+        <div class="kpi-label">Hoàn thành hôm nay</div>
+        <div class="kpi-value" id="kpi-completed">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks đã done</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#00d4ff" onclick="app.showTab('created')">
+        <div class="kpi-label">Tạo mới hôm nay</div>
+        <div class="kpi-value" id="kpi-created">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks mới phát sinh</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#ef4444" onclick="app.showTab('wait-test')">
+        <div class="kpi-label">Chờ Test</div>
+        <div class="kpi-value" id="kpi-waitTest">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">đã commit · chờ QA</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#f59e0b" onclick="app.showTab('pending')">
+        <div class="kpi-label">Chờ thực hiện</div>
+        <div class="kpi-value" id="kpi-pending">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks trong hàng đợi</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#a855f7" onclick="app.showTab('doing')">
+        <div class="kpi-label">Đang thực hiện</div>
+        <div class="kpi-value" id="kpi-doing">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">tasks đang chạy</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#f43f5e" onclick="app.showTab('priority')">
+        <div class="kpi-label">Ưu tiên (P!)</div>
+        <div class="kpi-value" id="kpi-priority">
+          <div class="kpi-loading"></div>
+        </div>
+        <div class="kpi-sub">Làm & Chờ (P!)</div>
+      </div>
+    </div>
+
+    <!-- BOTTOM GRID -->
+    <div class="section-label">Chi tiết nhân sự & Tasks</div>
+    <div class="bottom-grid">
+
+      <!-- Personnel Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span class="table-title">Nhân sự</span>
+            <input type="text" id="staffSearch" class="staff-search" placeholder="🔍 Tìm tên..."
+              oninput="app.searchStaff(this.value)">
+            <select class="dept-select" onchange="app.filterByDept(this.value)">
+              <option value="All">Tất cả phòng ban</option>
+              <option value="Phòng Triển Khai - Quản Lý Dự Án">Phòng Triển Khai - QLDA</option>
+              <option value="Phòng Lập Trình">Phòng Lập Trình</option>
+              <option value="Ban Giám Đốc">Ban Giám Đốc</option>
+            </select>
+          </div>
+          <span class="table-badge" id="staffCount">-- người</span>
+        </div>
+        <!-- Top Performers -->
+        <div class="top-performers-section" id="topPerfSection">
+          <div class="top-perf-title">🏆 Top Hiệu suất hôm nay</div>
+          <div class="top-perf-list" id="topPerfList"></div>
+        </div>
+        <div class="personnel-list">
+          <div class="person-row person-row-head">
+            <div class="col-head">Tên</div>
+            <div class="col-head" title="Chờ">CHỜ</div>
+            <div class="col-head" title="Đang làm">LÀM</div>
+            <div class="col-head" title="Review">REV</div>
+            <div class="col-head" title="Ưu tiên">P!</div>
+          </div>
+          <div id="personList"></div>
+        </div>
+      </div>
+
+      <!-- Task Detail -->
+      <div class="detail-card">
+        <div class="table-header">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span class="table-title">Chi tiết Tasks</span>
+            <select class="dept-select" id="projectSelect" onchange="app.filterByProject(this.value)">
+              <option value="All">Tất cả dự án</option>
+            </select>
+            <button class="refresh-btn" onclick="app.toggleSort()"
+              style="background:var(--card-bg); color:var(--text); border:1px solid var(--border); padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
+              </svg>
+              SẮP XẾP
+            </button>
+            <button class="refresh-btn" onclick="app.exportTasks()"
+              style="background:#22c55e; color:white; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              XUẤT EXCEL
+            </button>
+          </div>
+        </div>
+        <div class="detail-tabs" id="tabBar">
+          <button class="tab-btn active" data-tab="completed" onclick="app.showTab('completed')">✓ Hoàn thành</button>
+          <button class="tab-btn" data-tab="created" onclick="app.showTab('created')">+ Tạo mới</button>
+          <button class="tab-btn" data-tab="wait-test" onclick="app.showTab('wait-test')">⬡ Chờ test</button>
+          <button class="tab-btn" data-tab="pending" onclick="app.showTab('pending')">⏳ Chờ</button>
+          <button class="tab-btn" data-tab="doing" onclick="app.showTab('doing')">▶ Đang làm</button>
+          <button class="tab-btn" data-tab="priority" onclick="app.showTab('priority')"
+            style="--tab-accent:var(--red)">🔥 Ưu tiên</button>
+        </div>
+        <div class="detail-body" id="taskList">
+          <div class="empty-state">Đang tải dữ liệu...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="app.closeModal(event)">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Task Detail</div>
+        <button class="modal-close" onclick="app.closeModalDirect()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-dot"></div>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- JS -->
+  <script src="script.js"></script>
+</body>
+
+</html>

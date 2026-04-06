@@ -4,186 +4,533 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MQ Soft — Task Command Center</title>
-  <!-- Fonts -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
+  <title>MQ Soft — Sign In</title>
+  <meta name="description" content="Đăng nhập vào MQ Soft Task Command Center">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05080f;
+      --surface: #0b1120;
+      --surface2: #101828;
+      --border: #162035;
+      --border2: #1e2f4a;
+      --primary: #22c55e;
+      --primary-dim: rgba(34,197,94,0.12);
+      --primary-glow: rgba(34,197,94,0.3);
+      --yellow: #f59e0b;
+      --red: #f43f5e;
+      --text: #e2e8f0;
+      --text-muted: #4a6080;
+      --text-dim: #8899b0;
+      --display: 'Syne', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --body: 'DM Sans', sans-serif;
+      --radius: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── BACKGROUND FX ── */
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(34,197,94,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,197,94,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%);
+    }
+
+    .bg-glow {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(34,197,94,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 90%, rgba(245,158,11,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(34,197,94,0.04) 0%, transparent 70%);
+    }
+
+    /* Floating particles */
+    .particles {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: var(--primary);
+      border-radius: 50%;
+      opacity: 0;
+      animation: float-up var(--dur, 8s) var(--delay, 0s) infinite ease-in;
+    }
+    @keyframes float-up {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.2; }
+      100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+    }
+
+    /* ── MAIN CARD ── */
+    .login-wrap {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 420px;
+      padding: 1rem;
+      animation: card-in 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(32px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      box-shadow:
+        0 0 0 1px rgba(34,197,94,0.05),
+        0 24px 80px rgba(0,0,0,0.6),
+        0 0 60px rgba(34,197,94,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top accent line */
+    .login-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--yellow), transparent);
+    }
+
+    /* ── LOGO ── */
+    .login-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .logo-mark {
+      width: 42px; height: 42px;
+      background: var(--primary-dim);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 0 20px rgba(34,197,94,0.12);
+    }
+    .logo-mark svg { color: var(--primary); }
+    .logo-pulse {
+      position: absolute; inset: -4px;
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 13px;
+      animation: pulse-ring 2.5s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 0;   transform: scale(1.3); }
+    }
+    .logo-text { display: flex; flex-direction: column; gap: 1px; }
+    .logo-name {
+      font-family: var(--mono);
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--primary); letter-spacing: 0.2em;
+    }
+    .logo-sub {
+      font-family: var(--mono);
+      font-size: 0.58rem; color: var(--text-muted);
+      letter-spacing: 0.12em;
+    }
+
+    /* ── HEADING ── */
+    .login-title {
+      font-family: var(--display);
+      font-size: 1.7rem; font-weight: 800;
+      color: var(--text); line-height: 1.2;
+      margin-bottom: 0.35rem;
+    }
+    .login-desc {
+      font-size: 0.82rem; color: var(--text-muted);
+      margin-bottom: 2rem; line-height: 1.5;
+    }
+
+    /* ── FORM ── */
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+    .form-label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.62rem; font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+      transition: color 0.2s;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem 0.75rem 2.6rem;
+      color: var(--text);
+      font-family: var(--body); font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+      caret-color: var(--primary);
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input:focus {
+      border-color: rgba(34,197,94,0.4);
+      background: rgba(34,197,94,0.03);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.08);
+    }
+    .form-input:focus + .input-focus-line { transform: scaleX(1); }
+    .form-input:focus ~ .input-icon-wrap .input-icon { color: var(--primary); }
+
+    /* toggle password */
+    .pwd-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 2px;
+      transition: color 0.2s;
+    }
+    .pwd-toggle:hover { color: var(--text); }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(244,63,94,0.08);
+      border: 1px solid rgba(244,63,94,0.25);
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem; color: #f87171;
+      font-family: var(--mono);
+      margin-bottom: 1rem;
+      animation: shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+      display: none;
+    }
+    .error-msg.show { display: flex; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-6px); }
+      40%      { transform: translateX(6px); }
+      60%      { transform: translateX(-4px); }
+      80%      { transform: translateX(4px); }
+    }
+
+    /* ── SUBMIT BTN ── */
+    .submit-btn {
+      width: 100%; margin-top: 0.5rem;
+      background: var(--primary);
+      border: none; border-radius: 10px;
+      padding: 0.85rem 1rem;
+      color: #020c07;
+      font-family: var(--mono); font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      position: relative; overflow: hidden;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.25);
+    }
+    .submit-btn:hover {
+      background: #16a34a;
+      box-shadow: 0 6px 28px rgba(34,197,94,0.38);
+      transform: translateY(-1px);
+    }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn.loading {
+      opacity: 0.75; pointer-events: none;
+    }
+    .submit-btn .btn-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(2,12,7,0.3);
+      border-top-color: #020c07;
+      border-radius: 50%;
+      animation: btn-spin 0.7s linear infinite;
+      display: none;
+    }
+    .submit-btn.loading .btn-spinner { display: block; }
+    .submit-btn.loading .btn-text { display: none; }
+    @keyframes btn-spin { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ── */
+    .login-footer {
+      margin-top: 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .footer-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 0.6rem;
+      color: var(--text-muted); letter-spacing: 0.08em;
+    }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 6px var(--primary);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .footer-version {
+      font-family: var(--mono); font-size: 0.58rem; color: var(--border2);
+    }
+
+    /* ── Success flash ── */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: rgba(5,8,15,0.95);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+    .success-icon {
+      width: 64px; height: 64px;
+      background: var(--primary-dim);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary);
+      animation: pop-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .success-text {
+      font-family: var(--mono); font-size: 0.75rem;
+      color: var(--primary); letter-spacing: 0.15em;
+      animation: pop-in 0.4s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+  </style>
 </head>
 
 <body>
 
-  <header>
-    <div class="logo">
-      <div class="logo-dot"></div>
-      MQ·SOFT — TASK COMMAND CENTER
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Success overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
     </div>
-    <div class="header-right">
-      <span id="clock">--:--:--</span>
-      <span id="date-display"></span>
-      <button class="refresh-btn" id="refreshBtn" onclick="app.loadAll()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M23 4v6h-6M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-        </svg>
-        REFRESH
-      </button>
-    </div>
-  </header>
+    <div class="success-text">ĐĂNG NHẬP THÀNH CÔNG · ĐANG CHUYỂN HƯỚNG...</div>
+  </div>
 
-  <main>
-    <!-- Smart Alert Banner -->
-    <div class="alert-banner" id="alertBanner">
-      <div class="alert-dot"></div>
-      <span id="alertMsg">Cảnh báo: Có nhân sự đang quá tải!</span>
-    </div>
+  <div class="login-wrap">
+    <div class="login-card">
 
-    <!-- KPI ROW -->
-    <div class="section-label">Tổng quan hôm nay</div>
-    <div class="kpi-grid" id="kpiGrid">
-      <div class="kpi-card" style="--card-accent:#22c55e" onclick="app.showTab('completed')">
-        <div class="kpi-label">Hoàn thành hôm nay</div>
-        <div class="kpi-value" id="kpi-completed">
-          <div class="kpi-loading"></div>
+      <!-- Logo -->
+      <div class="login-logo">
+        <div class="logo-mark">
+          <div class="logo-pulse"></div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
         </div>
-        <div class="kpi-sub">tasks đã done</div>
-      </div>
-      <div class="kpi-card" style="--card-accent:#00d4ff" onclick="app.showTab('created')">
-        <div class="kpi-label">Tạo mới hôm nay</div>
-        <div class="kpi-value" id="kpi-created">
-          <div class="kpi-loading"></div>
-        </div>
-        <div class="kpi-sub">tasks mới phát sinh</div>
-      </div>
-      <div class="kpi-card" style="--card-accent:#ef4444" onclick="app.showTab('wait-test')">
-        <div class="kpi-label">Chờ Test</div>
-        <div class="kpi-value" id="kpi-waitTest">
-          <div class="kpi-loading"></div>
-        </div>
-        <div class="kpi-sub">đã commit · chờ QA</div>
-      </div>
-      <div class="kpi-card" style="--card-accent:#f59e0b" onclick="app.showTab('pending')">
-        <div class="kpi-label">Chờ thực hiện</div>
-        <div class="kpi-value" id="kpi-pending">
-          <div class="kpi-loading"></div>
-        </div>
-        <div class="kpi-sub">tasks trong hàng đợi</div>
-      </div>
-      <div class="kpi-card" style="--card-accent:#a855f7" onclick="app.showTab('doing')">
-        <div class="kpi-label">Đang thực hiện</div>
-        <div class="kpi-value" id="kpi-doing">
-          <div class="kpi-loading"></div>
-        </div>
-        <div class="kpi-sub">tasks đang chạy</div>
-      </div>
-      <div class="kpi-card" style="--card-accent:#f43f5e" onclick="app.showTab('priority')">
-        <div class="kpi-label">Ưu tiên (P!)</div>
-        <div class="kpi-value" id="kpi-priority">
-          <div class="kpi-loading"></div>
-        </div>
-        <div class="kpi-sub">Làm & Chờ (P!)</div>
-      </div>
-    </div>
-
-    <!-- BOTTOM GRID -->
-    <div class="section-label">Chi tiết nhân sự & Tasks</div>
-    <div class="bottom-grid">
-
-      <!-- Personnel Table -->
-      <div class="table-card">
-        <div class="table-header">
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <span class="table-title">Nhân sự</span>
-            <input type="text" id="staffSearch" class="staff-search" placeholder="🔍 Tìm tên..."
-              oninput="app.searchStaff(this.value)">
-            <select class="dept-select" onchange="app.filterByDept(this.value)">
-              <option value="All">Tất cả phòng ban</option>
-              <option value="Phòng Triển Khai - Quản Lý Dự Án">Phòng Triển Khai - QLDA</option>
-              <option value="Phòng Lập Trình">Phòng Lập Trình</option>
-              <option value="Ban Giám Đốc">Ban Giám Đốc</option>
-            </select>
-          </div>
-          <span class="table-badge" id="staffCount">-- người</span>
-        </div>
-        <!-- Top Performers -->
-        <div class="top-performers-section" id="topPerfSection">
-          <div class="top-perf-title">🏆 Top Hiệu suất hôm nay</div>
-          <div class="top-perf-list" id="topPerfList"></div>
-        </div>
-        <div class="personnel-list">
-          <div class="person-row person-row-head">
-            <div class="col-head">Tên</div>
-            <div class="col-head" title="Chờ">CHỜ</div>
-            <div class="col-head" title="Đang làm">LÀM</div>
-            <div class="col-head" title="Review">REV</div>
-            <div class="col-head" title="Ưu tiên">P!</div>
-          </div>
-          <div id="personList"></div>
+        <div class="logo-text">
+          <span class="logo-name">MQ · SOFT</span>
+          <span class="logo-sub">TASK COMMAND CENTER</span>
         </div>
       </div>
 
-      <!-- Task Detail -->
-      <div class="detail-card">
-        <div class="table-header">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span class="table-title">Chi tiết Tasks</span>
-            <select class="dept-select" id="projectSelect" onchange="app.filterByProject(this.value)">
-              <option value="All">Tất cả dự án</option>
-            </select>
-            <button class="refresh-btn" onclick="app.toggleSort()"
-              style="background:var(--card-bg); color:var(--text); border:1px solid var(--border); padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
+      <!-- Heading -->
+      <div class="login-title">Xin chào 👋</div>
+      <div class="login-desc">Đăng nhập để truy cập trung tâm điều hành task.</div>
+
+      <!-- Form -->
+      <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+
+        <!-- Username -->
+        <div class="form-group">
+          <label class="form-label" for="username">Tên đăng nhập</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
               </svg>
-              SẮP XẾP
-            </button>
-            <button class="refresh-btn" onclick="app.exportTasks()"
-              style="background:#22c55e; color:white; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; height:32px; display:flex; align-items:center; gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </span>
+            <input
+              type="text" id="username" class="form-input"
+              placeholder="Nhập tên đăng nhập"
+              autocomplete="username"
+              required
+            >
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="password">Mật khẩu</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              XUẤT EXCEL
+            </span>
+            <input
+              type="password" id="password" class="form-input"
+              placeholder="Nhập mật khẩu"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="pwd-toggle" id="pwdToggle" onclick="togglePwd()" title="Hiện/ẩn mật khẩu">
+              <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
             </button>
           </div>
         </div>
-        <div class="detail-tabs" id="tabBar">
-          <button class="tab-btn active" data-tab="completed" onclick="app.showTab('completed')">✓ Hoàn thành</button>
-          <button class="tab-btn" data-tab="created" onclick="app.showTab('created')">+ Tạo mới</button>
-          <button class="tab-btn" data-tab="wait-test" onclick="app.showTab('wait-test')">⬡ Chờ test</button>
-          <button class="tab-btn" data-tab="pending" onclick="app.showTab('pending')">⏳ Chờ</button>
-          <button class="tab-btn" data-tab="doing" onclick="app.showTab('doing')">▶ Đang làm</button>
-          <button class="tab-btn" data-tab="priority" onclick="app.showTab('priority')"
-            style="--tab-accent:var(--red)">🔥 Ưu tiên</button>
+
+        <!-- Error -->
+        <div class="error-msg" id="errorMsg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span id="errorText">Tên đăng nhập hoặc mật khẩu không đúng.</span>
         </div>
-        <div class="detail-body" id="taskList">
-          <div class="empty-state">Đang tải dữ liệu...</div>
+
+        <!-- Submit -->
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <div class="btn-spinner"></div>
+          <span class="btn-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+            ĐĂNG NHẬP
+          </span>
+        </button>
+
+      </form>
+
+      <!-- Footer -->
+      <div class="login-footer">
+        <div class="footer-badge">
+          <div class="status-dot"></div>
+          HỆ THỐNG HOẠT ĐỘNG BÌNH THƯỜNG
         </div>
+        <span class="footer-version">v2.0.0 · 2026</span>
       </div>
 
     </div>
-  </main>
-
-  <!-- Modal -->
-  <div class="modal-overlay" id="modalOverlay" onclick="app.closeModal(event)">
-    <div class="modal" id="modal">
-      <div class="modal-header">
-        <div class="modal-title" id="modalTitle">Task Detail</div>
-        <button class="modal-close" onclick="app.closeModalDirect()">✕</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast" id="toast">
-    <div class="toast-dot"></div>
-    <span id="toastMsg"></span>
-  </div>
+  <script>
+    // ── Floating particles
+    (function() {
+      const container = document.getElementById('particles');
+      const cols = ['#22c55e','#f59e0b','#38bdf8','#a855f7'];
+      for (let i = 0; i < 22; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+          left: ${Math.random()*100}%;
+          --dur: ${6 + Math.random()*8}s;
+          --delay: ${Math.random()*10}s;
+          background: ${cols[Math.floor(Math.random()*cols.length)]};
+          width: ${1+Math.random()*2}px;
+          height: ${1+Math.random()*2}px;
+          opacity: 0;
+        `;
+        container.appendChild(p);
+      }
+    })();
 
-  <!-- JS -->
-  <script src="script.js"></script>
+    // ── Toggle password visibility
+    function togglePwd() {
+      const inp = document.getElementById('password');
+      const icon = document.getElementById('eyeIcon');
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      icon.innerHTML = show
+        ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    }
+
+    // ── Login handler
+    function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+      const btn  = document.getElementById('submitBtn');
+      const err  = document.getElementById('errorMsg');
+
+      err.classList.remove('show');
+      btn.classList.add('loading');
+
+      // Simulate auth delay
+      setTimeout(() => {
+        if (user === 'admin' && pass === 'mqsoft@123') {
+          // Success
+          document.getElementById('successOverlay').classList.add('show');
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1200);
+        } else {
+          btn.classList.remove('loading');
+          document.getElementById('errorText').textContent =
+            'Tên đăng nhập hoặc mật khẩu không đúng.';
+          err.classList.add('show');
+          // Shake inputs
+          ['username','password'].forEach(id => {
+            const el = document.getElementById(id);
+            el.style.borderColor = 'rgba(244,63,94,0.5)';
+            el.style.background  = 'rgba(244,63,94,0.04)';
+            setTimeout(() => {
+              el.style.borderColor = '';
+              el.style.background  = '';
+            }, 1800);
+          });
+        }
+      }, 800);
+    }
+
+    // ── Dismiss error on typing
+    ['username','password'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById('errorMsg').classList.remove('show');
+      });
+    });
+
+    // ── Enter key on username → focus password
+    document.getElementById('username').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('password').focus();
+      }
+    });
+  </script>
+
 </body>
-
 </html>

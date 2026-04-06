@@ -10,7 +10,9 @@ const ACCESS = '164726767694b476b9aa55371444621';
 
 const staffList = [
   { name: "Đoàn Văn Thiện", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
-  { name: "Nguyễn Thành Long", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
+  {
+    name: "Nguyễn Thành Long", dept: "Phòng Lập Trình"
+  },
   { name: "Trần Thanh Tuấn", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Vũ Hữu Trùng Dương", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Lê Nhật Trường", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
@@ -72,7 +74,7 @@ function parse1OfficeDate(dateStr) {
   // Match DD/MM/YYYY or YYYY-MM-DD and potentially HH:mm:ss
   const parts = String(dateStr).match(/(\d+)/g);
   if (!parts || parts.length < 3) return new Date(dateStr) || new Date(0);
-  
+
   if (parts[0].length === 4) { // YYYY-MM-DD
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? new Date(0) : d;
