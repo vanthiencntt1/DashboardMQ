@@ -414,13 +414,26 @@ main {
   transition: background 0.3s;
 }
 
-.person-row.load-high::before  { background: var(--red); }
-.person-row.load-mid::before   { background: var(--yellow); }
-.person-row.load-low::before   { background: var(--green); }
+.person-row.load-high::before {
+  background: var(--red);
+}
+
+.person-row.load-mid::before {
+  background: var(--yellow);
+}
+
+.person-row.load-low::before {
+  background: var(--green);
+}
 
 /* Workload name color */
-.person-row.load-high .person-name { color: var(--red); }
-.person-row.load-mid .person-name  { color: var(--yellow); }
+.person-row.load-high .person-name {
+  color: var(--red);
+}
+
+.person-row.load-mid .person-name {
+  color: var(--yellow);
+}
 
 .person-name {
   font-size: var(--fs-sm);
@@ -767,8 +780,15 @@ main {
 }
 
 @keyframes alert-slide-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .alert-dot {
@@ -786,9 +806,18 @@ main {
 }
 
 @keyframes kpi-alert {
-  0%, 90%, 100% { box-shadow: none; }
-  95% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); }
+
+  0%,
+  90%,
+  100% {
+    box-shadow: none;
+  }
+
+  95% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  }
 }
+
 .modal-overlay {
   position: fixed;
   inset: 0;

@@ -830,3 +830,14 @@ main {
   color: var(--text-muted); font-family: var(--mono); font-size: 0.7rem;
 }
 
+/* ── COMPLETED STAFF CLICKABLE ROWS ─────────── */
+.comp-staff-row { transition: background 0.15s, border-color 0.15s; }
+.comp-clickable:hover {
+  background: rgba(34, 197, 94, 0.04) !important;
+  border-left: 2px solid var(--primary);
+  padding-left: calc(1.25rem - 2px) !important;
+}
+.comp-clickable:hover .staff-name { color: var(--primary); }
+.comp-clickable:hover .staff-bar-fill { background: var(--primary) !important; filter: brightness(1.15); }
+.comp-clickable:hover .staff-count { color: var(--primary) !important; }
+

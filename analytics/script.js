@@ -11,39 +11,46 @@ const BASE = 'https://mqsoft.1office.vn/api/work/task/gets';
 
 const staffList = [
   { name: "Đoàn Văn Thiện", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
-  { name: "Nguyễn Thành Long", dept: "Phòng Lập Trình" },
+  {
+    name: "Nguyễn Thành Long", dept: "Phòng Lập Trình"
+  },
   { name: "Trần Thanh Tuấn", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Vũ Hữu Trùng Dương", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Lê Nhật Trường", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Nguyễn Phạm Nam An", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
+  { name: "Nguyễn Mạnh Hoàng", dept: "Phòng Lập Trình" },
   { name: "Nguyễn Phúc Văn", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
+  { name: "NGÔ TẤN NGỌC", dept: "Phòng Lập Trình" },
+  { name: "Phạm Đình Ngọc", dept: "Phòng Lập Trình" },
   { name: "IT Thủ Đức 2", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "ITBV Thủ Đức", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Nguyễn Thanh Vinh", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
+  { name: "Trần khánh Dư", dept: "Phòng Lập Trình" },
   { name: "Nguyễn Văn Thiện", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
+  { name: "Phạm Xuân Dũng", dept: "Phòng Lập Trình" },
   { name: "Lê Anh Vũ", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Triệu Anh Tú", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Trần Thanh Đạo", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   { name: "Đặng Ngọc Trí", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
-  { name: "Nguyễn Mạnh Hoàng", dept: "Phòng Lập Trình" },
-  { name: "NGÔ TẤN NGỌC", dept: "Phòng Lập Trình" },
-  { name: "Phạm Đình Ngọc", dept: "Phòng Lập Trình" },
-  { name: "Trần khánh Dư", dept: "Phòng Lập Trình" },
-  { name: "Phạm Xuân Dũng", dept: "Phòng Lập Trình" },
   { name: "Lâm Hồng Phúc", dept: "Ban Giám Đốc" },
   { name: "Nguyễn Ngọc Sơn", dept: "Ban Giám Đốc" },
   { name: "Nguyễn Tấn Kỳ", dept: "Ban Giám Đốc" },
   { name: "Phan Văn Bảo An", dept: "Ban Giám Đốc" }
 ];
 
+
 // ─── STATE ────────────────────────────────────────────────
 const state = {
-  period: 'week',
+  period: 'month',
   deptFilter: 'All',
   ageFilter: 'all',  // all | green (<7d) | yellow (7-90d) | red (>90d)
   allStaffData: [],
   tasksByDay: {},    // dateStr (DD/MM/YYYY) → tasks[]
-  staffTasks: {}     // staffName → sorted tasks[]
+  staffTasks: {},    // staffName → sorted tasks[]
+  compMode: 'month', // week | month | custom — default: tháng này
+  compCache: {},     // cacheKey → { results, tasksByStaff }
+  compTasksByStaff: {}, // staffName → filtered tasks[] (current range)
+  dailyCache: {}     // dateStr → Promise của fetchTasks cho ngày
 };
 
 // ─── DATE HELPERS ─────────────────────────────────────────
@@ -120,6 +127,14 @@ async function fetchTasks(filters) {
   const items = data?.data?.items || data?.items || data?.data || [];
   if (data?.total_item !== undefined) items.totalCount = data.total_item;
   return items;
+}
+
+// ─── CACHE GỌI API THEO NGÀY ──────────────────────────────
+async function fetchTasksForDate(dateStr) {
+  if (!state.dailyCache[dateStr]) {
+    state.dailyCache[dateStr] = fetchTasks([{ status: 'COMPLETED', date_updated: dateStr }]).catch(() => []);
+  }
+  return state.dailyCache[dateStr];
 }
 
 // ─── LOADING ──────────────────────────────────────────────
@@ -200,7 +215,7 @@ async function runWeek() {
   document.getElementById('loadingMsg').textContent = 'Đang tải 7 ngày gần nhất...';
 
   const results = await Promise.all(
-    dates.map(d => fetchTasks([{ status: 'COMPLETED', date_updated: fmtVN(d) }]).catch(() => []))
+    dates.map(d => fetchTasksForDate(fmtVN(d)))
   );
 
   let allTasks = [];
@@ -244,7 +259,7 @@ async function runMonth() {
       `Đang tải ngày ${i + 1}–${Math.min(i + BATCH, dates.length)} / ${dates.length}...`;
 
     const batchRes = await Promise.all(
-      slice.map(d => fetchTasks([{ status: 'COMPLETED', date_updated: fmtVN(d) }]).catch(() => []))
+      slice.map(d => fetchTasksForDate(fmtVN(d)))
     );
     batchRes.forEach((tasks, j) => {
       counts[i + j] = tasks.totalCount ?? tasks.length;
@@ -339,9 +354,9 @@ function closeDetailModal(e) {
 // --- MODAL: Staff task detail ---
 function showStaffDetail(name) {
   const allTasks = state.staffTasks[name] || [];
-  const overlay  = document.getElementById('detailOverlay');
-  const titleEl  = document.getElementById('detailTitle');
-  const content  = document.getElementById('detailContent');
+  const overlay = document.getElementById('detailOverlay');
+  const titleEl = document.getElementById('detailTitle');
+  const content = document.getElementById('detailContent');
   if (!overlay || !titleEl || !content) return;
 
   // Áp dụng age filter để modal hiện đúng nhóm task đang xem
@@ -351,9 +366,9 @@ function showStaffDetail(name) {
     if (age === 'all') return true;
     const created = parse1OfficeDate(t.date_created || t.created || '');
     const days = (now - created.getTime()) / 86400000;
-    if (age === 'green')  return days < 7;
+    if (age === 'green') return days < 7;
     if (age === 'yellow') return days >= 7 && days < 90;
-    if (age === 'red')    return days >= 90;
+    if (age === 'red') return days >= 90;
     return true;
   });
 
@@ -366,8 +381,8 @@ function showStaffDetail(name) {
   if (!tasks.length) {
     content.innerHTML = '<div class="modal-empty">Kh\u00F4ng c\u00F3 task n\u00E0o trong kho\u1EA3ng th\u1EDDi gian n\u00E0y!</div>';
   } else {
-    content.innerHTML = tasks.map(function(t, i) {
-      var taskID  = t.ID || t.id || '';
+    content.innerHTML = tasks.map(function (t, i) {
+      var taskID = t.ID || t.id || '';
       var taskUrl = 'https://mqsoft.1office.vn/work-normal-normal/view?ID=' + taskID;
       var project = (t.project_title || t.project_name || t.space_name || '').trim();
       var created = parse1OfficeDate(t.date_created || t.created || '');
@@ -478,22 +493,22 @@ async function loadStaffDistribution() {
 function getAgeFilteredData() {
   const now = Date.now();
   const dept = state.deptFilter;
-  const age  = state.ageFilter;
+  const age = state.ageFilter;
 
   function matchAge(t) {
     if (age === 'all') return true;
     const created = parse1OfficeDate(t.date_created || t.created || '');
     const days = (now - created.getTime()) / 86400000;
-    if (age === 'green')  return days < 7;
+    if (age === 'green') return days < 7;
     if (age === 'yellow') return days >= 7 && days < 90;
-    if (age === 'red')    return days >= 90;
+    if (age === 'red') return days >= 90;
     return true;
   }
 
   return state.allStaffData
     .filter(s => dept === 'All' || s.dept === dept)
     .map(s => {
-      const raw      = state.staffTasks[s.name] || [];
+      const raw = state.staffTasks[s.name] || [];
       const filtered = age === 'all' ? raw : raw.filter(matchAge);
       let totalDays = 0, validCount = 0;
       let pending = 0, doing = 0, review = 0;
@@ -552,8 +567,8 @@ function renderStaffChart(data) {
   el.innerHTML = visible.map(s => {
     const total100 = s.count || 1;
     const pPct = Math.round((s.pending / total100) * 100);
-    const dPct = Math.round((s.doing   / total100) * 100);
-    const rPct = Math.round((s.review  / total100) * 100);
+    const dPct = Math.round((s.doing / total100) * 100);
+    const rPct = Math.round((s.review / total100) * 100);
     // bar width relative to maxCount
     const barW = Math.round((s.count / maxCount) * 100);
     const safeName = s.name.replace(/'/g, "\\'");
@@ -563,15 +578,15 @@ function renderStaffChart(data) {
         <div class="sb-track">
           <div class="sb-bar-outer" style="width:${barW}%">
             ${s.pending > 0 ? `<div class="sb-seg sb-pending" style="flex:${s.pending}" title="Chờ: ${s.pending}"></div>` : ''}
-            ${s.doing   > 0 ? `<div class="sb-seg sb-doing"   style="flex:${s.doing}"   title="Đang làm: ${s.doing}"></div>` : ''}
-            ${s.review  > 0 ? `<div class="sb-seg sb-review"  style="flex:${s.review}"  title="Review: ${s.review}"></div>` : ''}
+            ${s.doing > 0 ? `<div class="sb-seg sb-doing"   style="flex:${s.doing}"   title="Đang làm: ${s.doing}"></div>` : ''}
+            ${s.review > 0 ? `<div class="sb-seg sb-review"  style="flex:${s.review}"  title="Review: ${s.review}"></div>` : ''}
           </div>
           <span class="sb-total">${s.count}</span>
         </div>
         <div class="sb-breakdown">
           ${s.pending > 0 ? `<span class="sb-chip sb-chip-p">${s.pending}</span>` : ''}
-          ${s.doing   > 0 ? `<span class="sb-chip sb-chip-d">${s.doing}</span>`   : ''}
-          ${s.review  > 0 ? `<span class="sb-chip sb-chip-r">${s.review}</span>`  : ''}
+          ${s.doing > 0 ? `<span class="sb-chip sb-chip-d">${s.doing}</span>` : ''}
+          ${s.review > 0 ? `<span class="sb-chip sb-chip-r">${s.review}</span>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -605,11 +620,11 @@ function switchRightTab(tab) {
 
 // ─── DONUT PIE CHART (SVG, zero deps) ─────────────────────
 const PIE_PALETTE = [
-  '#22c55e','#f59e0b','#f43f5e','#38bdf8','#a78bfa',
-  '#fb923c','#34d399','#f472b6','#facc15','#60a5fa',
-  '#4ade80','#c084fc','#fb7185','#2dd4bf','#fbbf24',
-  '#818cf8','#86efac','#fda4af','#67e8f9','#fde68a',
-  '#a5f3fc','#ddd6fe','#fecaca','#bbf7d0'
+  '#22c55e', '#f59e0b', '#f43f5e', '#38bdf8', '#a78bfa',
+  '#fb923c', '#34d399', '#f472b6', '#facc15', '#60a5fa',
+  '#4ade80', '#c084fc', '#fb7185', '#2dd4bf', '#fbbf24',
+  '#818cf8', '#86efac', '#fda4af', '#67e8f9', '#fde68a',
+  '#a5f3fc', '#ddd6fe', '#fecaca', '#bbf7d0'
 ];
 
 function renderPieChart(data) {
@@ -670,7 +685,7 @@ function renderPieChart(data) {
         stroke-dasharray="${dash} ${space}"
         stroke-dashoffset="${-off}"
         onclick="showStaffDetail('${safeName}')"
-        title="${s.name}: ${s.count} tasks (${(s.count/total*100).toFixed(1)}%)"
+        title="${s.name}: ${s.count} tasks (${(s.count / total * 100).toFixed(1)}%)"
       />`;
   });
 
@@ -711,9 +726,21 @@ async function loadAll() {
   if (btn) btn.classList.add('loading');
   toast('Đang tải dữ liệu...');
 
+  // Set default dates for inputs if empty
+  const sIn = document.getElementById('compStartDate');
+  const eIn = document.getElementById('compEndDate');
+  if (sIn && !sIn.value) {
+    const t = new Date(); t.setDate(t.getDate() - 30);
+    sIn.value = t.toISOString().split('T')[0];
+  }
+  if (eIn && !eIn.value) {
+    eIn.value = new Date().toISOString().split('T')[0];
+  }
+
   await Promise.all([
     loadTimeline(state.period),
-    loadStaffDistribution()
+    loadStaffDistribution(),
+    loadCompletedStaff()
   ]);
 
   if (btn) btn.classList.remove('loading');
@@ -741,3 +768,232 @@ window.onload = () => {
   loadAll();
   setInterval(loadAll, 10 * 60 * 1000);
 };
+
+// ─── STAFF COMPLETED BY DATE RANGE ────────────────────────
+function getCompDateRange() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Đặt lại giờ để cache key không bị lệch theo millisecond
+
+  if (state.compMode === 'week') {
+    // 7 ngày gần nhất: hôm nay lùi lại 6 ngày → hôm nay
+    const end = new Date(now);
+    const start = new Date(now); start.setDate(now.getDate() - 6);
+    return { start, end };
+  }
+  if (state.compMode === 'month') {
+    // 30 ngày gần nhất: hôm nay lùi lại 29 ngày → hôm nay
+    const end = new Date(now);
+    const start = new Date(now); start.setDate(now.getDate() - 29);
+    return { start, end };
+  }
+
+  const startIn = document.getElementById('compStartDate').value;
+  const endIn = document.getElementById('compEndDate').value;
+  if (!startIn || !endIn) return null;
+  return { start: new Date(startIn), end: new Date(endIn) };
+}
+
+function setCompMode(mode) {
+  state.compMode = mode;
+  document.getElementById('btnCompWeek').classList.toggle('active', mode === 'week');
+  document.getElementById('btnCompMonth').classList.toggle('active', mode === 'month');
+  document.getElementById('btnCompCustom').classList.toggle('active', mode === 'custom');
+
+  const wrap = document.getElementById('compCustomDateWrapper');
+  if (wrap) wrap.style.display = mode === 'custom' ? 'flex' : 'none';
+
+  const badges = { week: '7 Ngày Qua', month: '30 Ngày Qua', custom: 'Từ Ngày - Đến Ngày' };
+  document.getElementById('compRangeBadge').textContent = badges[mode];
+
+  if (mode !== 'custom') loadCompletedStaff();
+}
+
+// ─── SHOW COMPLETED TASK MODAL ─────────────────────────────
+function showCompletedStaffDetail(name) {
+  const tasks = state.compTasksByStaff[name] || [];
+  const overlay = document.getElementById('detailOverlay');
+  const titleEl = document.getElementById('detailTitle');
+  const content = document.getElementById('detailContent');
+  if (!overlay || !titleEl || !content) return;
+
+  const modeLabel = { week: '7 ngày qua', month: '30 ngày qua', custom: 'tuỳ chọn' };
+  titleEl.textContent = `✅ ${name} — ${tasks.length} task hoàn thành [${modeLabel[state.compMode] || ''}]`;
+
+  if (!tasks.length) {
+    content.innerHTML = '<div class="modal-empty">Không có task hoàn thành trong khoảng này!</div>';
+  } else {
+    content.innerHTML = tasks.map((t, i) => {
+      const taskID = t.ID || t.id || '';
+      const taskUrl = `https://mqsoft.1office.vn/work-normal-normal/view?ID=${taskID}`;
+      const project = (t.project_title || t.project_name || t.space_name || '').trim();
+      const dateStr = t.date_updated || t.updated || t.date_completed || t.date_created || '';
+      const d = parse1OfficeDate(dateStr);
+      const dateLabel = d && d.getTime() ? d.toLocaleDateString('vi-VN') : '';
+      return `
+        <a href="${taskUrl}" target="_blank" rel="noopener" class="task-link-row">
+          <div class="tlr-num">#${i + 1}</div>
+          <div class="tlr-info">
+            <div class="tlr-title">${t.title || t.name || '—'}</div>
+            <div class="tlr-meta">
+              <span style="color:#22c55e;border:1px solid #22c55e55;background:#22c55e11;padding:1px 7px;border-radius:3px;font-size:0.62rem;font-family:var(--mono);">✓ Hoàn thành</span>
+              ${project ? `<span>📁 ${project}</span>` : ''}
+              ${dateLabel ? `<span style="font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);">📅 ${dateLabel}</span>` : ''}
+            </div>
+          </div>
+          <div class="tlr-arrow">→</div>
+        </a>`;
+    }).join('');
+  }
+
+  overlay.classList.add('open');
+}
+
+async function loadCompletedStaff() {
+  const range = getCompDateRange();
+  if (!range) return toast('Vui lòng chọn ngày hợp lệ!');
+
+  const startMs = range.start.getTime();
+  const endMs = range.end.getTime();
+  const diffDays = (endMs - startMs) / 86400000;
+
+  if (diffDays < 0) return toast('Ngày kết thúc phải lớn hơn ngày bắt đầu!');
+  if (diffDays > 93) return toast('Giới hạn lọc tối đa là 3 tháng (93 ngày)!');
+
+  // ─── CACHE CHECK: tránh gọi API lại nếu cùng range ────────
+  const cacheKey = `${startMs}_${endMs}`;
+  if (state.compCache[cacheKey]) {
+    state.compTasksByStaff = state.compCache[cacheKey].tasksByStaff;
+    renderCompletedStaff(state.compCache[cacheKey].results, state.compCache[cacheKey].fullTotal);
+    return;
+  }
+
+  showLoading('compStaffLoading');
+  const msgEl = document.getElementById('compStaffLoadingMsg');
+
+  // Tạo danh sách các ngày cần tải (từ start -> end)
+  const datesToFetch = [];
+  const curr = new Date(range.start);
+  curr.setHours(0, 0, 0, 0);
+  const endLimitObj = new Date(range.end);
+  endLimitObj.setHours(23, 59, 59, 999);
+
+  while (curr <= endLimitObj && datesToFetch.length <= 93) {
+    datesToFetch.push(new Date(curr));
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  if (msgEl) msgEl.textContent = `Đang tải ${datesToFetch.length} ngày (0/${datesToFetch.length})...`;
+
+  const BATCH = 8;
+  const allTasks = [];
+
+  for (let i = 0; i < datesToFetch.length; i += BATCH) {
+    const slice = datesToFetch.slice(i, i + BATCH);
+    const batchRes = await Promise.all(
+      slice.map(d => fetchTasksForDate(fmtVN(d)))
+    );
+    batchRes.forEach(tasks => {
+      if (Array.isArray(tasks)) allTasks.push(...tasks);
+    });
+    if (msgEl) msgEl.textContent = `Đang tải ${datesToFetch.length} ngày (${Math.min(i + BATCH, datesToFetch.length)}/${datesToFetch.length})...`;
+  }
+
+  // Khởi tạo danh sách task cho mỗi nhân sự
+  const tasksByStaff = {};
+  staffList.forEach(s => tasksByStaff[s.name] = []);
+
+  const seenIds = new Set();
+  const uniqueTasks = [];
+
+  allTasks.forEach(t => {
+    const id = t.ID || t.id;
+    if (id && seenIds.has(id)) return;
+    if (id) {
+      seenIds.add(id);
+      uniqueTasks.push(t);
+    }
+
+    const assignees = (t.assign_names || t.assign_ids || '').split(',').map(n => n.trim());
+    assignees.forEach(name => {
+      // Chỉ tính những task của nhân sự có trong danh sách staffList
+      if (tasksByStaff[name]) {
+        tasksByStaff[name].push(t);
+      }
+    });
+  });
+
+  const results = staffList.map(s => {
+    const tasks = tasksByStaff[s.name] || [];
+    // Sắp xếp mới → cũ
+    tasks.sort((a, b) => {
+      const da = parse1OfficeDate(a.date_updated || a.updated || a.date_created || '').getTime();
+      const db = parse1OfficeDate(b.date_updated || b.updated || b.date_created || '').getTime();
+      return db - da;
+    });
+    return { name: s.name, count: tasks.length };
+  });
+
+  // Lưu vào cache (max 5 entries, xóa entry cũ nhất nếu vượt)
+  const cacheKeys = Object.keys(state.compCache);
+  if (cacheKeys.length >= 5) delete state.compCache[cacheKeys[0]];
+  
+  // Truyền fullTotal (tổng thực tế API, bao gồm task k gán cho ai trong staffList) để đồng bộ vs Section 1
+  state.compCache[cacheKey] = { 
+    results: [...results].sort((a, b) => b.count - a.count), 
+    tasksByStaff,
+    fullTotal: uniqueTasks.length
+  };
+  state.compTasksByStaff = tasksByStaff;
+
+  renderCompletedStaff(state.compCache[cacheKey].results, uniqueTasks.length);
+}
+
+function renderCompletedStaff(results, fullTotal) {
+  const sorted = [...results].sort((a, b) => b.count - a.count);
+  const maxCount = Math.max(...sorted.map(r => r.count), 1);
+  const total = fullTotal !== undefined ? fullTotal : sorted.reduce((a, b) => a + b.count, 0);
+
+  const modeLabel = { week: '7 ngày qua', month: '30 ngày qua', custom: 'tuỳ chọn' };
+  let html = `
+    <div style="font-family:var(--mono); font-size:var(--fs-xs); color:var(--primary); margin:0 1rem 1rem; display:flex; align-items:baseline; gap:8px;">
+      <span>TỔNG CỘNG:</span>
+      <span style="font-size:1rem; font-weight:bold; color:var(--text)">${total}</span>
+      <span>TASKS HOÀN THÀNH</span>
+      <span style="margin-left:auto; color:var(--text-muted); font-size:0.6rem">${modeLabel[state.compMode] || ''}</span>
+    </div>
+  `;
+
+  html += sorted.filter(r => r.count > 0).map((r, idx) => {
+    const pct = (r.count / maxCount) * 100;
+    const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+    const safeName = r.name.replace(/'/g, "\\'");
+    const hasDetail = (state.compTasksByStaff[r.name] || []).length > 0;
+    return `
+      <div class="staff-row comp-staff-row${hasDetail ? ' comp-clickable' : ''}" 
+           style="grid-template-columns: 1fr 120px; padding:0.85rem 1.25rem; cursor:${hasDetail ? 'pointer' : 'default'};" 
+           ${hasDetail ? `onclick="showCompletedStaffDetail('${safeName}')" title="Xem chi tiết ${r.count} task của ${r.name}"` : ''}>
+        <div class="staff-info">
+          <div class="staff-name" style="font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+            <span style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted); min-width:24px">${rankEmoji}</span>
+            ${r.name}
+            ${hasDetail ? '<span style="font-size:0.55rem; opacity:0.5; margin-left:4px;">↗ xem</span>' : ''}
+          </div>
+          <div class="staff-bar-wrap" style="height:4px">
+            <div class="staff-bar-fill" style="width:${pct}%; background:var(--primary); transition: width 0.4s ease;"></div>
+          </div>
+        </div>
+        <div class="staff-meta">
+          <div class="staff-count" style="color:var(--text); font-size:1.1rem">${r.count} <span style="font-size:0.6rem; color:var(--primary)">tasks</span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (total === 0) {
+    html += '<div class="chart-empty">Không có task hoàn thành trong khoảng thời gian này</div>';
+  }
+
+  const listEl = document.getElementById('compStaffList');
+  if (listEl) listEl.innerHTML = html;
+  hideLoading('compStaffLoading');
+}

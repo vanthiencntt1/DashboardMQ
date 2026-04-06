@@ -7,7 +7,6 @@
 const TOKEN = '164726767694b476b9aa55371444621';
 const BASE = 'https://mqsoft.1office.vn/api/work/task/gets';
 const ACCESS = '164726767694b476b9aa55371444621';
-
 const staffList = [
   { name: "Đoàn Văn Thiện", dept: "Phòng Triển Khai - Quản Lý Dự Án" },
   {
@@ -36,6 +35,7 @@ const staffList = [
   { name: "Nguyễn Tấn Kỳ", dept: "Ban Giám Đốc" },
   { name: "Phan Văn Bảo An", dept: "Ban Giám Đốc" }
 ];
+
 
 // --- STATE ---
 let state = {

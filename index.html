@@ -447,6 +447,11 @@
   </div>
 
   <script>
+    // ── Check saved auth
+    if (localStorage.getItem('mqsoft_auth') === 'true') {
+      window.location.replace('dashboard.html');
+    }
+
     // ── Floating particles
     (function() {
       const container = document.getElementById('particles');
@@ -493,6 +498,7 @@
       setTimeout(() => {
         if (user === 'admin' && pass === 'mqsoft@123') {
           // Success
+          localStorage.setItem('mqsoft_auth', 'true');
           document.getElementById('successOverlay').classList.add('show');
           setTimeout(() => {
             window.location.href = 'dashboard.html';

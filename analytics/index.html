@@ -6,8 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analytics — MQ Soft Performance Hub</title>
   <meta name="description" content="Phân tích hiệu suất task hoàn thành và phân bổ nhân sự MQ Soft">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+
+  <!-- Check Auth -->
+  <script>
+    if (localStorage.getItem('mqsoft_auth') !== 'true') {
+      window.location.replace('../index.html');
+    }
+    function logout() {
+      localStorage.removeItem('mqsoft_auth');
+      window.location.replace('../index.html');
+    }
+  </script>
 </head>
 
 <body>
@@ -40,6 +53,12 @@
         </svg>
         REFRESH
       </button>
+      <button class="action-btn" onclick="logout()" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        ĐĂNG XUẤT
+      </button>
     </div>
   </header>
 
@@ -53,8 +72,8 @@
           <h1 class="section-title">Task Hoàn Thành</h1>
         </div>
         <div class="period-selector">
-          <button class="period-btn active" data-period="week" onclick="setPeriod('week')">7 Ngày gần nhất</button>
-          <button class="period-btn" data-period="month" onclick="setPeriod('month')">30 Ngày gần nhất</button>
+          <button class="period-btn" data-period="week" onclick="setPeriod('week')">7 Ngày gần nhất</button>
+          <button class="period-btn active" data-period="month" onclick="setPeriod('month')">30 Ngày gần nhất</button>
         </div>
       </div>
 
@@ -62,22 +81,30 @@
       <div class="kpi-row">
         <div class="kpi-mini">
           <div class="kmi-label">Tổng hoàn thành</div>
-          <div class="kmi-value" id="kv-total"><div class="skel-line"></div></div>
+          <div class="kmi-value" id="kv-total">
+            <div class="skel-line"></div>
+          </div>
           <div class="kmi-sub" id="ks-total">tasks done</div>
         </div>
         <div class="kpi-mini">
           <div class="kmi-label">Trung bình / ngày</div>
-          <div class="kmi-value" id="kv-avg"><div class="skel-line"></div></div>
+          <div class="kmi-value" id="kv-avg">
+            <div class="skel-line"></div>
+          </div>
           <div class="kmi-sub" id="ks-avg">tasks per day</div>
         </div>
         <div class="kpi-mini">
           <div class="kmi-label">Ngày tốt nhất</div>
-          <div class="kmi-value" id="kv-best"><div class="skel-line"></div></div>
+          <div class="kmi-value" id="kv-best">
+            <div class="skel-line"></div>
+          </div>
           <div class="kmi-sub" id="ks-best">—</div>
         </div>
         <div class="kpi-mini kpi-top">
           <div class="kmi-label">Top performer</div>
-          <div class="kmi-value kmi-name" id="kv-top"><div class="skel-line"></div></div>
+          <div class="kmi-value kmi-name" id="kv-top">
+            <div class="skel-line"></div>
+          </div>
           <div class="kmi-sub" id="ks-top">—</div>
         </div>
       </div>
@@ -120,9 +147,12 @@
           </select>
           <div class="age-filter-group">
             <button class="age-btn active" data-age="all" onclick="filterAge('all')">Tất cả</button>
-            <button class="age-btn" data-age="green" onclick="filterAge('green')"><span class="lc green"></span>&lt; 7 ngày</button>
-            <button class="age-btn" data-age="yellow" onclick="filterAge('yellow')"><span class="lc yellow"></span>7 – 90 ngày</button>
-            <button class="age-btn" data-age="red" onclick="filterAge('red')"><span class="lc red"></span>&gt; 3 tháng</button>
+            <button class="age-btn" data-age="green" onclick="filterAge('green')"><span class="lc green"></span>&lt; 7
+              ngày</button>
+            <button class="age-btn" data-age="yellow" onclick="filterAge('yellow')"><span class="lc yellow"></span>7 –
+              90 ngày</button>
+            <button class="age-btn" data-age="red" onclick="filterAge('red')"><span class="lc red"></span>&gt; 3
+              tháng</button>
           </div>
         </div>
       </div>
@@ -171,6 +201,42 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: THỐNG KÊ HOÀN THÀNH THEO NHÂN SỰ -->
+    <div class="section-wrap">
+      <div class="section-top">
+        <div class="section-title-group">
+          <div class="section-eyebrow">CHI TIẾT MỖI CÁ NHÂN</div>
+          <h2 class="section-title">
+            Hoàn Thành Theo Nhân Sự
+            <span class="title-badge" id="compRangeBadge">30 Ngày Qua</span>
+          </h2>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div class="age-filter-group">
+            <button class="age-btn" id="btnCompWeek" onclick="setCompMode('week')">Tuần này</button>
+            <button class="age-btn active" id="btnCompMonth" onclick="setCompMode('month')">Tháng này</button>
+            <button class="age-btn" id="btnCompCustom" onclick="setCompMode('custom')">Tuỳ chọn</button>
+          </div>
+          <div id="compCustomDateWrapper" style="display:none; align-items:center; gap:8px;">
+            <input type="date" id="compStartDate" class="filter-select" style="width:130px; font-family:var(--mono); font-size:var(--fs-xs)">
+            <span style="color:var(--text-muted)">-</span>
+            <input type="date" id="compEndDate" class="filter-select" style="width:130px; font-family:var(--mono); font-size:var(--fs-xs)">
+            <button class="action-btn" onclick="loadCompletedStaff()">Lọc (≤ 90 Ngày)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="staff-table-card" style="padding:1.5rem; position:relative; min-height: 250px;">
+        <div class="chart-loading" id="compStaffLoading">
+          <div class="spinner"></div>
+          <span id="compStaffLoadingMsg">Đang phân tích (0/24)...</span>
+        </div>
+        <div class="staff-table-scroll" id="compStaffList" style="max-height: 400px;">
+          <!-- js populates staff rows here -->
         </div>
       </div>
     </div>
