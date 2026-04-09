@@ -1,11 +1,11 @@
 const ERROR_KW = [
   // 1. Dấu hiệu lỗi trực tiếp
-  'lỗi', 'bug', 'sai', 'hỏng', 'treo', 'chết', 'văng', 'đơ', 'đứng', 'chậm', 'delay', 'vấn đề', 
+  'lỗi', 'bug', 'sai', 'hỏng', 'treo', 'chết', 'văng', 'đơ', 'đứng', 'chậm', 'delay', 'vấn đề',
   'không', 'chưa', 'thiếu', 'mất', 'nhầm', 'chờ', 'kẹt',
-  
+
   // 2. Yêu cầu hỗ trợ, tùy chỉnh, nâng cấp
   'nhờ', 'giúp', 'xem', 'kiểm tra', 'check', 'coi', 'chỉnh', 'thêm', 'cập nhật', 'update', 'đổi', 'mở', 'reset', 'cấp', 'cho', 'tạo',
-  
+
   // 3. Nghiệp vụ Bệnh viện (HIS) - Hễ nhắc tới thường là hỏi nghiệp vụ
   'bhyt', 'bảo hiểm', 'xml', 'viện phí', 'thanh toán', 'biên lai', 'hdđt', 'hóa đơn', 'tạm ứng',
   'kê toa', 'đơn thuốc', 'chỉ định', 'cls', 'xn', 'xét nghiệm', 'siêu âm', 'pacs', 'kq', 'kết quả', 'bệnh án', 'tường trình',
@@ -16,16 +16,18 @@ const ERROR_KW = [
 
 const IGNORE_KW = [
   // Các câu phản hồi đã hoàn thành của team IT
-  'đã check', 'đã kiểm tra', 'đã xử lý', 'đã fix', 'đã sửa', 'đã báo', 'đã xong', 'đã update', 'hoàn thành', 'đã mở'
+  'đã check', 'đã kiểm tra', 'đã xử lý', 'đã fix', 'đã sửa', 'đã báo', 'đã xong', 'đã update', 'hoàn thành', 'đã mở',
+  // Loại bỏ theo yêu cầu
+  'chưa được', 'dạ anh', 'xem giúp', 'hỗ trợ giúp', 'check lại', 'rồi nha', 'rồi ạ', 'chép lại ', 'ultral', 'utr', ' ultra máy', 'xong chưa', 'cho mabn'
 ];
 
 function isErrorMsg(text) {
   const t = (text || '').toLowerCase();
   if (!t) return false;
-  
+
   // 1. Lọc rác và tin nhắn xác nhận ngắn gọn của nhân sự (IT/User)
   if (/^(ok|oke|dạ|vâng|rồi|xong|chờ xíu|đang xử lý|đang check)[\s.!]*$/.test(t)) return false;
-  
+
   // 2. Lọc các câu IT báo cáo ĐÃ làm xong
   if (IGNORE_KW.some(kw => t.includes(kw))) return false;
 

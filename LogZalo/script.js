@@ -10,7 +10,8 @@ const sheets = [
   { id: 5, name: 'BV Đa khoa Củ Chi', url: 'https://docs.google.com/spreadsheets/d/1SVDsyr4b_9gA02tmtveUb_mNU-B_YZJT0PAb2877w7o', status: '', data: [] },
   { id: 6, name: 'BV Đa Khoa Bạc Liêu', url: 'https://docs.google.com/spreadsheets/d/1tOS2Oe5t9misvXd1NrsRHqEhSxjT5AoKGMPZR4l64h0', status: '', data: [] },
   { id: 7, name: 'BV An Bình', url: 'https://docs.google.com/spreadsheets/d/1aieOePVTkANARGgWl0HUUos9MV1-JIT2uP541iaYF_w', status: '', data: [] },
-  { id: 8, name: 'NỘI BỘ MQ', url: 'https://docs.google.com/spreadsheets/d/1TCVf1LAYbDrQcd2zfHLxMZ1CrprdFqYFrpckyre_MJI', status: '', data: [] },
+  { id: 8, name: 'BV Đa khoa Thủ Đức', url: 'https://docs.google.com/spreadsheets/d/13ATUVK5bqA1IuEi_kj_X2TxBAVQ3MQbTaiD7h3dNaGs', status: '', data: [] },
+  { id: 9, name: 'NỘI BỘ MQ', url: 'https://docs.google.com/spreadsheets/d/1TCVf1LAYbDrQcd2zfHLxMZ1CrprdFqYFrpckyre_MJI', status: '', data: [] },
 ];
 
 let activeSheetId = 1;
@@ -121,9 +122,30 @@ function countStaff(rows) {
 function countErrors(rows) {
   const c = {};
   rows.forEach(r => {
-    const txt = (r.noidung || r.content || '').toLowerCase();
-    if (!isErrorMsg(txt)) return;
-    ERROR_KW.forEach(kw => { if (txt.includes(kw)) c[kw] = (c[kw] || 0) + 1; });
+    let raw = (r.noidung || r.content || '').toLowerCase();
+    if (!isErrorMsg(raw)) return;
+    
+    // Loại bỏ dấu câu và từ nối (STOP words) để kéo các từ quan trọng lại gần nhau
+    let txt = raw.replace(/[.,:;"'!?()[\]{}\-\/\\]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (typeof STOP !== 'undefined') {
+      txt = txt.split(' ').filter(w => !STOP.has(w)).join(' ');
+    }
+
+    ERROR_KW.forEach(kw => {
+      let idx = txt.indexOf(kw);
+      if (idx !== -1) {
+        // Cắt lấy Keyword + tối đa 2 từ liền kề sau nó (vì từ tiếng Việt hay ghép 2 âm tiết. vd: lỗi + máy + in)
+        let words = txt.slice(idx).split(' ');
+        let len = kw.split(' ').length + 2; 
+        let phrase = words.slice(0, len).join(' ').trim();
+        
+        if (phrase) {
+          // Viết hoa chữ đầu cho đẹp nhãn biểu đồ
+          phrase = phrase.charAt(0).toUpperCase() + phrase.slice(1);
+          c[phrase] = (c[phrase] || 0) + 1;
+        }
+      }
+    });
   });
   return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 10);
 }
