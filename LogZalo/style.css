@@ -179,8 +179,15 @@ body {
 
 /* ── Top Controls ────────────────────────────────── */
 .page-header { margin-bottom: 28px; }
-.page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+.flex-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+
+.page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 2px; }
 .page-sub { font-size: 14px; color: var(--text-dim); }
+
+.btn-outline { text-decoration: none; color: var(--text); border: 1px solid var(--border); background: var(--bg); }
+.btn-danger { color: #ef4444; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
 
 .controls-bar {
   display: flex; align-items: center; gap: 8px;
@@ -608,6 +615,21 @@ body {
     margin-top: 4px;
   }
   
+  .flex-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+  
   .controls-bar {
     width: 100%;
     flex-wrap: wrap;
@@ -636,6 +658,12 @@ body {
   
   .range-select:focus {
     border-color: var(--blue-glow);
+  }
+
+  .last-updated {
+    width: 100%;
+    text-align: center;
+    padding: 4px 0 0 0;
   }
   
   .metrics {
