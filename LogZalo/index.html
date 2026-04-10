@@ -44,15 +44,33 @@
     <!-- AI Config -->
     <div class="sidebar-ai-section">
       <div class="sidebar-label">Cấu hình AI</div>
-      <div class="api-input-wrap">
+
+      <div class="api-input-wrap" style="margin-bottom:0.5rem;">
+        <select id="aiProvider" onchange="toggleAIProviderUI()" style="width:100%;background:#1e293b;color:#cbd5e1;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;outline:none;cursor:pointer;">
+          <option value="gemini">✨ Google Gemini</option>
+          <option value="chiasegpu">🤖 ChiaSeGPU (GPT-4.1)</option>
+        </select>
+      </div>
+
+      <div id="geminiKeyWrap" class="api-input-wrap">
         <input type="password" id="geminiApiKey" placeholder="Dán Gemini API Key…" autocomplete="off">
       </div>
-      <div class="api-hint">
+      <div id="chiasegpuKeyWrap" class="api-input-wrap" style="display:none;">
+        <input type="password" id="chiasegpuApiKey" placeholder="Dán ChiaSeGPU API Key…" autocomplete="off">
+      </div>
+
+      <div id="geminiHint" class="api-hint">
         Lấy key miễn phí tại
         <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a>
         <br><br>
         Google Sheet cần bật:<br>
         <strong style="color:#94a3b8">Share → Anyone with link → Viewer</strong>
+      </div>
+      <div id="chiasegpuHint" class="api-hint" style="display:none;">
+        🔐 Key tại
+        <a href="https://llm.chiasegpu.vn" target="_blank" rel="noopener">llm.chiasegpu.vn ↗</a><br>
+        Model: <strong style="color:#94a3b8">gpt-4.1</strong><br>
+        Endpoint: <code style="font-size:0.75rem;color:#64748b;word-break:break-all;">https://llm.chiasegpu.vn/v1/chat/completions</code>
       </div>
     </div>
   </aside>

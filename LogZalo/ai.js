@@ -1,21 +1,29 @@
 const AI_MODEL = 'gemini-flash-latest';
+const CHIASEGPU_MODEL = 'gpt-4.1';
+const CHIASEGPU_ENDPOINT = 'https://llm.chiasegpu.vn/v1/chat/completions';
+
+// ─── TOGGLE PROVIDER UI ────────────────────────────────
+function toggleAIProviderUI() {
+  const provider = document.getElementById('aiProvider')?.value || 'gemini';
+  const isGemini = provider === 'gemini';
+  document.getElementById('geminiKeyWrap').style.display = isGemini ? '' : 'none';
+  document.getElementById('chiasegpuKeyWrap').style.display = isGemini ? 'none' : '';
+  document.getElementById('geminiHint').style.display = isGemini ? '' : 'none';
+  document.getElementById('chiasegpuHint').style.display = isGemini ? 'none' : '';
+}
 
 // ─── AI ANALYSIS ──────────────────────────────────────
 async function analyzeWithAI() {
-  let apiKey = document.getElementById('geminiApiKey')?.value?.trim() || '';
+  const provider = document.getElementById('aiProvider')?.value || 'gemini';
   const card = document.getElementById('aiCard');
   const result = document.getElementById('aiResult');
-  
   if (!card || !result) return;
 
-  if (!apiKey) {
-    apiKey = 'AIzaSyD48vtw8_xZYo09B1AzHaXkcP_HYc7Yh9Y'; // Fallback to provided API key
-  }
-
+  const providerLabel = provider === 'chiasegpu' ? '🤖 GPT-4.1 đang phân tích...' : '✨ Gemini AI đang phân tích dữ liệu lỗi...';
   card.style.display = 'block';
   result.innerHTML = `
     <div class="ai-thinking">
-      <span>Gemini AI đang phân tích dữ liệu lỗi...</span>
+      <span>${providerLabel}</span>
       <div class="ai-dots"><span></span><span></span><span></span></div>
     </div>`;
 
@@ -55,20 +63,49 @@ Hãy thực hiện phân tích chuyên sâu:
 Trả lời bằng tiếng Việt, súc tích, có cấu trúc rõ ràng.`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,
-      {
+    let text = '';
+
+    if (provider === 'chiasegpu') {
+      // ── ChiaSeGPU (OpenAI-compatible) ──────────────
+      let apiKey = document.getElementById('chiasegpuApiKey')?.value?.trim() || '';
+      if (!apiKey) throw new Error('Vui lòng nhập ChiaSeGPU API Key vào sidebar.');
+
+      const res = await fetch(CHIASEGPU_ENDPOINT, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
+          'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message || 'Lỗi API');
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        body: JSON.stringify({
+          model: CHIASEGPU_MODEL,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || 'Lỗi ChiaSeGPU API');
+      text = data.choices?.[0]?.message?.content || '';
+
+    } else {
+      // ── Google Gemini ──────────────────────────────
+      let apiKey = document.getElementById('geminiApiKey')?.value?.trim() || '';
+      if (!apiKey) apiKey = 'AIzaSyD48vtw8_xZYo09B1AzHaXkcP_HYc7Yh9Y';
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || 'Lỗi Gemini API');
+      text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
     result.innerHTML = formatAIResponse(text) + `
       <div style="margin-top: 24px; text-align: right; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
         <button onclick="exportReportToWord()" class="btn" style="background:#2563eb; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:500;">
@@ -95,20 +132,20 @@ function formatAIResponse(text) {
     .replace(/\n/g, '<br>');
 }
 
-window.exportReportToWord = function() {
+window.exportReportToWord = function () {
   const resultDiv = document.getElementById('aiResult');
   if (!resultDiv) return;
-  
+
   // Clone (phục vụ việc xóa nút mà không làm mất trên UI)
   const clone = resultDiv.cloneNode(true);
-  
+
   // Tìm và xóa khối button div (nằm cuối cùng, căn lề phải)
   const btnDivs = clone.querySelectorAll('div[style*="text-align: right"]');
   btnDivs.forEach(el => el.remove());
 
   const hospital = sheets.find(s => s.id === activeSheetId)?.name || 'Bệnh_Viện';
   const timeStr = new Date().toLocaleString('vi-VN');
-  
+
   // Đóng gói HTML vào chuẩn Namespace của Office Word
   const htmlContent = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -142,18 +179,18 @@ window.exportReportToWord = function() {
     </body>
     </html>
   `;
-  
+
   // Dùng \ufeff (BOM) để Word hiểu đúng UTF-8 Tiếng Việt
   const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
   const url = URL.createObjectURL(blob);
-  
+
   const a = document.createElement('a');
   a.href = url;
   a.download = `BaoCao_AI_${hospital.replace(/\s+/g, '_')}_${new Date().getTime()}.doc`;
-  
+
   document.body.appendChild(a);
   a.click();
-  
+
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
