@@ -185,16 +185,20 @@ function escapeHtml(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-function renderBarList(items, offset = 0) {
+function renderBarList(items, offset = 0, type = 'none') {
   if (!items.length) return '<div class="no-data">Không có dữ liệu</div>';
   const max = items[0][1];
-  return items.map(([label, count], i) => `
-    <div class="bar-row">
+  const isError = type === 'error';
+  return items.map(([label, count], i) => {
+    const encodedLabel = encodeURIComponent(label);
+    return `
+    <div class="bar-row${isError ? ' clickable' : ''}"${isError ? ` data-label="${encodedLabel}" style="cursor:pointer;" title="Nhấn để xem tin nhắn liên quan"` : ''}>
       <div class="bar-rank">#${i + 1}</div>
       <div class="bar-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(count / max * 100)}%;background:${COLORS[(i + offset) % COLORS.length]}"></div></div>
       <div class="bar-num">${count}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderTimeline(rows, days) {
@@ -303,6 +307,102 @@ function renderErrorDetails(rows) {
     </div>`).join('');
 }
 
+function showErrorDetails(label) {
+  const target = String(label).toLowerCase();
+  const sheet = sheets.find(s => s.id === activeSheetId);
+  const days = parseInt(document.getElementById('dayRange')?.value || '30');
+  const rows = filterByDays(sheet.data || [], days);
+
+  const matchedRows = rows.filter(r => {
+    const raw = (r.noidung || r.content || '').toLowerCase();
+    if (!isErrorMsg(raw)) return false;
+    let txt = raw.replace(/[.,:;"'!?()[\]{}\-\/\\]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (typeof STOP !== 'undefined') {
+      txt = txt.split(' ').filter(w => !STOP.has(w)).join(' ');
+    }
+    if (typeof ERROR_KW !== 'undefined') {
+      for (const kw of ERROR_KW) {
+        const idx = txt.indexOf(kw);
+        if (idx !== -1) {
+          const words = txt.slice(idx).split(' ');
+          const len = kw.split(' ').length + 2;
+          const phrase = words.slice(0, len).join(' ').trim().toLowerCase();
+          if (phrase === target) return true;
+        }
+      }
+      return false;
+    }
+    return txt.includes(target);
+  });
+
+  // Tạo modal nếu chưa có (chỉ 1 lần)
+  if (!document.getElementById('errorModal')) {
+    const overlay = document.createElement('div');
+    overlay.id = 'errorModal';
+    overlay.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);z-index:9999;justify-content:center;align-items:center;padding:1.5rem;opacity:0;transition:opacity 0.25s ease;box-sizing:border-box;';
+    overlay.innerHTML = `
+      <div id="errorModalBox" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:16px;width:100%;max-width:660px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);overflow:hidden;transform:scale(0.95);transition:transform 0.25s ease;">
+        <div id="errorModalHeader" style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;background:rgba(15,23,42,0.7);flex-shrink:0;">
+          <h3 id="errorModalTitle" style="margin:0;font-size:1.1rem;color:#f1f5f9;font-weight:600;display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;"></h3>
+          <button id="errorModalClose" style="background:none;border:none;color:#64748b;font-size:2rem;cursor:pointer;line-height:1;padding:0 0 0 1rem;outline:none;flex-shrink:0;transition:color 0.2s;">&times;</button>
+        </div>
+        <div id="errorModalBody" style="padding:1.25rem;overflow-y:auto;flex:1;background:#0f172a;"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // Style bổ sung
+    const s = document.createElement('style');
+    s.textContent = `
+      #errorModalClose:hover { color: #fbbf24; }
+      .bar-row.clickable { cursor:pointer; border-radius:8px; transition:background 0.2s, transform 0.2s; }
+      .bar-row.clickable:hover { background:rgba(255,255,255,0.06); transform:translateX(4px); }
+      #errorModal .err-item { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:1rem; border-radius:10px; margin-bottom:0.75rem; }
+      #errorModal .err-item:last-child { margin-bottom:0; }
+    `;
+    document.head.appendChild(s);
+
+    document.getElementById('errorModalClose').addEventListener('click', closeErrorModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeErrorModal(); });
+  }
+
+  // Cập nhật tiêu đề
+  const titleEl = document.getElementById('errorModalTitle');
+  titleEl.innerHTML = `<span style="color:#fbbf24;font-size:1.2rem;">⚠️</span>
+    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(label)}</span>
+    <span style="font-size:0.8rem;padding:0.2rem 0.65rem;background:rgba(59,130,246,0.2);color:#60a5fa;border-radius:12px;white-space:nowrap;flex-shrink:0;">${matchedRows.length} tin</span>`;
+
+  // Cập nhật nội dung body
+  const bodyEl = document.getElementById('errorModalBody');
+  bodyEl.innerHTML = matchedRows.length
+    ? renderErrorDetails(matchedRows)
+    : '<div class="no-data" style="padding:2rem;text-align:center;">Không tìm thấy bản ghi nào phù hợp.</div>';
+
+  // Hiển thị
+  const modal = document.getElementById('errorModal');
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    document.getElementById('errorModalBox').style.transform = 'scale(1)';
+  });
+}
+
+function closeErrorModal() {
+  const modal = document.getElementById('errorModal');
+  const box = document.getElementById('errorModalBox');
+  if (!modal) return;
+  modal.style.opacity = '0';
+  if (box) box.style.transform = 'scale(0.95)';
+  setTimeout(() => { modal.style.display = 'none'; }, 250);
+}
+
+// Gắn event delegation cho bar-row.clickable (thay thế onclick inline)
+document.addEventListener('click', e => {
+  const row = e.target.closest('.bar-row.clickable');
+  if (row && row.dataset.label) {
+    showErrorDetails(decodeURIComponent(row.dataset.label));
+  }
+});
+
 // ─── SIDEBAR ──────────────────────────────────────────
 function renderSidebar() {
   const el = document.getElementById('sheetList');
@@ -400,11 +500,11 @@ async function runAnalysis() {
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-title"><div class="chart-title-left">⚠️ Vấn đề phổ biến nhất</div></div>
-        ${renderBarList(errorCounts, 0)}
+        ${renderBarList(errorCounts, 0, 'error')}
       </div>
       <div class="chart-card">
         <div class="chart-title"><div class="chart-title-left">👥 Nhân sự hoạt động nhiều</div></div>
-        ${renderBarList(staffCounts, 3)}
+        ${renderBarList(staffCounts, 3, 'staff')}
       </div>
     </div>
 
